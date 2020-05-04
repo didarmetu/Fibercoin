@@ -1,0 +1,26 @@
+# /etc/conf.d/fibercoind: config file for /etc/init.d/fibercoind
+
+# Config file location
+#BITCOIND_CONFIGFILE="/etc/fibercoin/fibercoin.conf"
+
+# What directory to write pidfile to?  (created and owned by $BITCOIND_USER)
+#BITCOIND_PIDDIR="/var/run/fibercoind"
+
+# What filename to give the pidfile
+#BITCOIND_PIDFILE="${BITCOIND_PIDDIR}/fibercoind.pid"
+
+# Where to write fibercoind data (be mindful that the blockchain is large)
+#BITCOIND_DATADIR="/var/lib/fibercoind"
+
+# User and group to own fibercoind process
+#BITCOIND_USER="fibercoin"
+#BITCOIND_GROUP="fibercoin"
+
+# Path to fibercoind executable
+#BITCOIND_BIN="/usr/bin/fibercoind"
+
+# Nice value to run fibercoind under
+#BITCOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+BITCOIND_OPTS=""

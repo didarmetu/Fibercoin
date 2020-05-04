@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Fibercoin
+Comment=Fibercoin P2P Cryptocurrency
+Exec=fibercoin-qt %u
+Terminal=false
+Type=Application
+Icon=fibercoin128
+MimeType=x-scheme-handler/fibercoin;
+Categories=Office;Finance;
+Name[en_US]=fibercoin-qt.desktop
