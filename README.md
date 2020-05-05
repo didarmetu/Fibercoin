@@ -4,7 +4,7 @@ Fibercoin is a fork of the PIVX codebase; which uses a combination of Masternode
 
 The first consequtive blocks contain premine; and additionally the coins allocated for the user coin swap, destined for holders of the previous PoW/PoS version of Fibercoin.
 
-A total of 10000 SC is required to run a masternode; while the minimum stake age has been set to 5 hours.
+A total of 10,000 FBC is required to run a masternode; while the minimum stake age has been set to 5 hours.
 
 
 ## Brief Fibercoin Specifications
