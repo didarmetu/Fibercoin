@@ -35,19 +35,35 @@ Fibercoin Links
 ===========================
 
 Webside: https://fibercoin.tk/
+
 Discord: https://discord.gg/hUvXmJj
+
 Explorer-1: http://fbcexplorer.tk
+
 Explorer-2: https://openchains.info/coin/fbc/blocks
+
 Wallets: https://github.com/didarmetu/Fibercoin/releases
+
 White Paper: https://github.com/didarmetu/Fibercoin/raw/master/Fibercoin-White-Paper.pdf
+
 GitHub Source: https://github.com/didarmetu/Fibercoin
+
 Bitcointalk: https://bitcointalk.org/index.php?topic=5118230
+
 Telegram: https://t.me/fibercoin
+
 Twitter: https://twitter.com/Fibercoin
+
 Reddit: https://www.reddit.com/r/Fibercoin
+
 Fibercoin Exchange: https://fiberchange.com/
+
 Stake pools: https://staking.world/
+
 For phones: https://blockfolio.com/#get-app
+
 Coingecko: https://www.coingecko.com/coins/fibercoin
+
 Coincodex: https://coincodex.com/crypto/fibercoin
+
 Coinpaprika: https://coinpaprika.com/coin/fbc-fibercoin
