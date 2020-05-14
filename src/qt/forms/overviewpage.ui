@@ -875,7 +875,7 @@
                         </font>
                        </property>
                        <property name="text">
-                        <string notr="true">&lt;a href=&quot;http://fbcexplorer.tk &quot;&gt;http://fbcexplorer.tk/ &lt;/a&gt;</string>
+                        <string notr="true">&lt;a href=&quot;http://fbcexplorer.tk&quot;&gt;http://fbcexplorer.tk&lt;/a&gt;</string>
                        </property>
                        <property name="alignment">
                         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
