@@ -392,13 +392,13 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
     multiSendAction->setToolTip(tr("MultiSend Settings"));
     multiSendAction->setCheckable(true);
 
-    openInfoAction = new QAction(QIcon(":/icons/info"), tr("&Information"), this);
+    openInfoAction = new QAction(QIcon(":/icons/bitcoin"), tr("&Information"), this);
     openInfoAction->setStatusTip(tr("Show diagnostic information"));
     openRPCConsoleAction = new QAction(QIcon(":/icons/debugwindow"), tr("&Debug console"), this);
     openRPCConsoleAction->setStatusTip(tr("Open debugging console"));
     openNetworkAction = new QAction(QIcon(":/icons/connect_4_black"), tr("&Network Monitor"), this);
     openNetworkAction->setStatusTip(tr("Show network monitor"));
-    openPeersAction = new QAction(QIcon(":/icons/connect_4_black"), tr("&Peers list"), this);
+    openPeersAction = new QAction(QIcon(":/icons/masternodes_active"), tr("&Peers list"), this);
     openPeersAction->setStatusTip(tr("Show peers info"));
     openRepairAction = new QAction(QIcon(":/icons/options"), tr("Wallet &Repair"), this);
     openRepairAction->setStatusTip(tr("Show wallet repair options"));
@@ -426,7 +426,7 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
     openBlockExplorerAction = new QAction(QIcon(":/icons/explorer"), tr("&Blockchain explorer"), this);
     openBlockExplorerAction->setStatusTip(tr("Block explorer window"));
 
-    showHelpMessageAction = new QAction(QIcon(":/icons/info"), tr("&Command-line options"), this);
+    showHelpMessageAction = new QAction(QIcon(":/icons/debugwindow"), tr("&Command-line options"), this);
     showHelpMessageAction->setMenuRole(QAction::NoRole);
     showHelpMessageAction->setStatusTip(tr("Show the Fibercoin Coin help message to get a list with possible Fibercoin Coin command-line options"));
 
