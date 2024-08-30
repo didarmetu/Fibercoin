@@ -2940,8 +2940,8 @@ Please check the address and try again.</source>
         <translation>Copyright (C) 2015-%i Разработчики PIVX Core</translation>
     </message>
     <message>
-        <source>Copyright (C) 2017-%i The Fibercoin Developers</source>
-        <translation>Copyright (C) 2017-%i Разработчики Fibercoin</translation>
+        <source>Copyright (C) 2019-%i The Fibercoin Developers</source>
+        <translation>Copyright (C) 2019-%i Разработчики Fibercoin</translation>
     </message>
     <message>
         <source>Corrupted block database detected</source>

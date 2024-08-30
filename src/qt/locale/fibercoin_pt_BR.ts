@@ -3347,7 +3347,7 @@ Favor verificar o endereço e tente novamente.</translation>
         <translation>Todos os direitos reservados (C) 2015-%i aos Desenvolvedores do PIVX Core</translation>
     </message>
     <message>
-        <source>Copyright (C) 2017-%i The Fibercoin Developers</source>
+        <source>Copyright (C) 2019-%i The Fibercoin Developers</source>
         <translation>Todos os direitos reservados (C) 2017-%i aos Desenvolvedores do Fibercoin</translation>
     </message>
     <message>

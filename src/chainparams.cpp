@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
-// Copyright (c) 2019-2020 The Fibercoin developers
+// Copyright (c) 2019-2024 The Fibercoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -49,12 +49,13 @@ static Checkpoints::MapCheckpoints mapCheckpoints =
     (425, uint256("0x1c206da9aeecdc628f5c7d7a8c1c5ee34a690aa914a294ab2098c6ef0458bf58"))
     (3333, uint256("0x10b43087d0e1baa13cd29aa04633b68fcbf874cc465613bce9e9bfa6f5d1bcfa"))
     (100050, uint256("0xcadce96fa4112bad8508be191ae7cafe2b20af793a2190fc815ac722782edf41"))
-    (358840, uint256("7714dd858ea46ad076477189cabc5fb8b247cf12340aff42a8b1d47404137479"));
+    (358840, uint256("7714dd858ea46ad076477189cabc5fb8b247cf12340aff42a8b1d47404137479"))
+    (516400, uint256("c368d7ec4dbf10caf66e0c488c65149d7b6fd344a4fd411bc49e8796a22661de"));
 
 static const Checkpoints::CCheckpointData data = {
     &mapCheckpoints,
-    1682103334, // * UNIX timestamp of last checkpoint block
-    718302,        // * total number of transactions between genesis and last checkpoint   (the tx=... number in the SetBestChain debug.log lines)
+    1725045016, // * UNIX timestamp of last checkpoint block
+    1033836,        // * total number of transactions between genesis and last checkpoint   (the tx=... number in the SetBestChain debug.log lines)
     1000        // * estimated number of transactions per day after checkpoint
 };
 

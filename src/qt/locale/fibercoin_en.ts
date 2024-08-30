@@ -5378,7 +5378,7 @@ for example: alertnotify=echo %%s | mail -s &quot;Fibercoin Alert&quot; admin@fo
     </message>
     <message>
         <location line="+1"/>
-        <source>Copyright (C) 2017-%i The Fibercoin Developers</source>
+        <source>Copyright (C) 2019-%i The Fibercoin Developers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

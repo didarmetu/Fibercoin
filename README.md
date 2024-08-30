@@ -79,7 +79,7 @@ Fibercoin is a fork of the PIVX codebase, and as a PoS cryptocurrency, it is sig
 
 * Webside: https://fibercoin.info
 * Discord: https://discord.gg/hUvXmJj
-* Explorer-1: http://fbcexplorer.tk
+* Explorer-1: https://explorer.fibercoin.info
 * Explorer-2: https://openchains.info/coin/fbc/blocks
 * Wallets: https://github.com/didarmetu/Fibercoin/releases
 * White Paper: https://github.com/didarmetu/Fibercoin/raw/master/Fibercoin-White-Paper.pdf
@@ -87,6 +87,7 @@ Fibercoin is a fork of the PIVX codebase, and as a PoS cryptocurrency, it is sig
 * Bitcointalk: https://bitcointalk.org/index.php?topic=5118230
 * Telegram: https://t.me/fibercoin
 * Twitter: https://twitter.com/Fibercoin
+* Reddit: https://www.reddit.com/r/Fibercoin
 * Fibercoin Exchange: https://fiberchange.com
 * CoinMarketCap: https://coinmarketcap.com/currencies/fibercoin/
 * Coincodex: https://coincodex.com/crypto/fibercoin

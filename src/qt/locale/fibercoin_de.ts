@@ -3734,8 +3734,8 @@ Bitte Adresse überprüfen und nochmals versuchen.</translation>
         <translation>Copyright (C) 2015-%i The PIVX Core Developers</translation>
     </message>
     <message>
-        <source>Copyright (C) 2017-%i The Fibercoin Developers</source>
-        <translation>Copyright (C) 2017-%i The Fibercoin Developers</translation>
+        <source>Copyright (C) 2019-%i The Fibercoin Developers</source>
+        <translation>Copyright (C) 2019-%i The Fibercoin Developers</translation>
     </message>
     <message>
         <source>Error</source>

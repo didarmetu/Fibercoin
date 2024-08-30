@@ -2625,8 +2625,8 @@ MultiSend: %1</translation>
         <translation>Copyright (C) 2015-%i The PIVX Core Ontwikkelaars</translation>
     </message>
     <message>
-        <source>Copyright (C) 2017-%i The Fibercoin Developers</source>
-        <translation>Copyright (C) 2017-%i The Fibercoin Ontwikkelaars</translation>
+        <source>Copyright (C) 2019-%i The Fibercoin Developers</source>
+        <translation>Copyright (C) 2019-%i The Fibercoin Ontwikkelaars</translation>
     </message>
     <message>
         <source>Debugging/Testing options:</source>

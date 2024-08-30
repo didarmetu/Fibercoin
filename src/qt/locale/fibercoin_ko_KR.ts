@@ -3893,8 +3893,8 @@ rpcpassword=%s
         <translation>Copyright (C) 2015-%i The PIVX Core 개발자</translation>
     </message>
     <message>
-        <source>Copyright (C) 2017-%i The Fibercoin Developers</source>
-        <translation>Copyright (C) 2017-%i The Fibercoin 개발자</translation>
+        <source>Copyright (C) 2019-%i The Fibercoin Developers</source>
+        <translation>Copyright (C) 2019-%i The Fibercoin 개발자</translation>
     </message>
     <message>
         <source>Corrupted block database detected</source>
