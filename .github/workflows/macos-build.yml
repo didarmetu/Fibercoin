@@ -46,9 +46,35 @@ jobs:
             zeromq \
             miniupnpc \
             qt@5 \
-            protobuf \
             qrencode \
             dylibbundler
+
+      - name: Build protobuf 3.20.3
+        run: |
+          set -euo pipefail
+
+          PROTOBUF_VERSION="3.20.3"
+          PROTOBUF_SOURCE="$RUNNER_TEMP/protobuf-source"
+          PROTOBUF_PREFIX="$RUNNER_TEMP/protobuf"
+
+          mkdir -p "$PROTOBUF_SOURCE" "$PROTOBUF_PREFIX"
+          cd "$PROTOBUF_SOURCE"
+
+          curl --location --fail \
+            --output "protobuf-cpp-${PROTOBUF_VERSION}.tar.gz" \
+            "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-cpp-${PROTOBUF_VERSION}.tar.gz"
+
+          tar -xzf "protobuf-cpp-${PROTOBUF_VERSION}.tar.gz"
+          cd "protobuf-${PROTOBUF_VERSION}"
+
+          ./configure \
+            --prefix="$PROTOBUF_PREFIX" \
+            --disable-shared \
+            --enable-static \
+            CXXFLAGS="-std=c++11"
+
+          make -j"$(sysctl -n hw.logicalcpu)"
+          make install
 
       - name: Build Berkeley DB 4.8
         run: |
@@ -81,7 +107,7 @@ jobs:
           BREW_PREFIX="$(brew --prefix)"
           QT_PREFIX="$(brew --prefix qt@5)"
           OPENSSL_PREFIX="$(brew --prefix openssl@3)"
-          PROTOBUF_PREFIX="$(brew --prefix protobuf)"
+          PROTOBUF_PREFIX="$RUNNER_TEMP/protobuf"
           BDB_PREFIX="$RUNNER_TEMP/bdb48"
 
           echo "$QT_PREFIX/bin" >> "$GITHUB_PATH"
