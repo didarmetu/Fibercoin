@@ -528,11 +528,11 @@ std::string LicenseInfo()
            FormatParagraph(_("This is experimental software. Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
            "\n" +
            FormatParagraph(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.")) +
-           "\n"; +
+           "\n" +
            FormatParagraph(_("Please contribute if you find Fibercoin Wallet useful. Visit <https://fibercoin.info/> for further information about the software.")) + "\n" +
            "\n" +
            FormatParagraph(_("The source code is available from <https://github.com/didarmetu/Fibercoin/>.")) +
-           "\n"; +
+           "\n" +
            FormatParagraph(_("For trading and exchanging Fibercoin, please visit the official Fibercoin Exchange at <https://fiberchange.com/>. The exchange provides a secure platform to trade Fibercoin and other supported cryptocurrencies.")) +
            "\n";
 }

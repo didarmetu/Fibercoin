@@ -1,0 +1,262 @@
+name: Ubuntu 24.04 Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - upgrade/build-modernization
+
+jobs:
+  build:
+    name: Build Ubuntu 24.04 x86_64
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Show build environment
+        run: |
+          uname -a
+          gcc --version
+          g++ --version
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libtool \
+            autotools-dev \
+            automake \
+            autoconf \
+            pkg-config \
+            curl \
+            file \
+            libssl-dev \
+            libevent-dev \
+            libboost-system-dev \
+            libboost-filesystem-dev \
+            libboost-program-options-dev \
+            libboost-thread-dev \
+            libboost-chrono-dev \
+            libboost-test-dev \
+            libminiupnpc-dev \
+            libzmq3-dev \
+            qtbase5-dev \
+            qttools5-dev \
+            qttools5-dev-tools \
+            libprotobuf-dev \
+            protobuf-compiler \
+            libqrencode-dev
+
+      - name: Build Berkeley DB 4.8
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BDB_SOURCE="$RUNNER_TEMP/bdb-source"
+          BDB_PREFIX="$RUNNER_TEMP/bdb48"
+
+          mkdir -p "$BDB_SOURCE" "$BDB_PREFIX"
+          cd "$BDB_SOURCE"
+
+          curl --location --fail \
+            --output db-4.8.30.NC.tar.gz \
+            https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
+
+          echo \
+            "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef db-4.8.30.NC.tar.gz" \
+            | sha256sum -c -
+
+          tar -xzf db-4.8.30.NC.tar.gz
+          cd db-4.8.30.NC
+
+          sed -i \
+            's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' \
+            dbinc/atomic.h
+
+          sed -i \
+            's/atomic_init/atomic_init_db/g' \
+            dbinc/atomic.h \
+            mp/mp_region.c \
+            mp/mp_mvcc.c \
+            mp/mp_fget.c \
+            mutex/mut_method.c \
+            mutex/mut_tas.c
+
+          cd build_unix
+
+          CFLAGS="-Wno-error=implicit-function-declaration" \
+            ../dist/configure \
+            --prefix="$BDB_PREFIX" \
+            --enable-cxx \
+            --disable-shared \
+            --with-pic \
+            --disable-replication
+
+          make -j"$(nproc)"
+          make install
+
+      - name: Generate build system
+        run: ./autogen.sh
+
+      - name: Configure
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BDB_PREFIX="$RUNNER_TEMP/bdb48"
+
+          CPPFLAGS="-I$BDB_PREFIX/include" \
+          LDFLAGS="-L$BDB_PREFIX/lib" \
+          ./configure \
+            --disable-tests \
+            --with-gui=qt5 \
+            --with-miniupnpc
+
+      - name: Compile
+        shell: bash
+        run: |
+          set -o pipefail
+          make -j"$(nproc)" V=1 2>&1 | tee ubuntu-24.04-build.log
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: fibercoin-ubuntu-24.04-diagnostics
+          path: ubuntu-24.04-build.log
+          if-no-files-found: error
+
+      - name: Create Ubuntu package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64"
+
+          mkdir -p "$PACKAGE/bin"
+
+          cp src/fibercoind "$PACKAGE/bin/"
+          cp src/fibercoin-cli "$PACKAGE/bin/"
+          cp src/fibercoin-tx "$PACKAGE/bin/"
+          cp src/qt/fibercoin-qt "$PACKAGE/"
+
+          chmod +x \
+            "$PACKAGE/bin/fibercoind" \
+            "$PACKAGE/bin/fibercoin-cli" \
+            "$PACKAGE/bin/fibercoin-tx" \
+            "$PACKAGE/fibercoin-qt"
+
+          strip --strip-unneeded \
+            "$PACKAGE/bin/fibercoind" \
+            "$PACKAGE/bin/fibercoin-cli" \
+            "$PACKAGE/bin/fibercoin-tx" \
+            "$PACKAGE/fibercoin-qt"
+
+      - name: Audit runtime libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64"
+          REPORT="$PACKAGE/runtime-libraries.txt"
+          : > "$REPORT"
+
+          for binary in \
+            "$PACKAGE/bin/fibercoind" \
+            "$PACKAGE/bin/fibercoin-cli" \
+            "$PACKAGE/bin/fibercoin-tx" \
+            "$PACKAGE/fibercoin-qt"
+          do
+            {
+              echo "===== $binary ====="
+              file "$binary"
+              ldd "$binary"
+              echo
+            } >> "$REPORT"
+          done
+
+          cat "$REPORT"
+
+          if grep -q "not found" "$REPORT"; then
+            echo "::error::A required Ubuntu library is missing."
+            exit 1
+          fi
+
+      - name: Test executables
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64"
+
+          test_command() {
+            binary="$1"
+            argument="$2"
+            expected="$3"
+            status=0
+
+            if output=$("$binary" "$argument" 2>&1); then
+              status=0
+            else
+              status=$?
+            fi
+
+            echo "$output"
+
+            if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then
+              echo "::error::$binary exited with status $status"
+              return "$status"
+            fi
+
+            if ! grep -Eqi "$expected" <<< "$output"; then
+              echo "::error::$binary did not produce expected output"
+              return 1
+            fi
+          }
+
+          test_command \
+            "$PACKAGE/bin/fibercoind" \
+            "--version" \
+            "2.0.2.4"
+
+          test_command \
+            "$PACKAGE/bin/fibercoin-cli" \
+            "--version" \
+            "2.0.2.4"
+
+          test_command \
+            "$PACKAGE/bin/fibercoin-tx" \
+            "-?" \
+            "usage|fibercoin-tx"
+
+          QT_QPA_PLATFORM=offscreen \
+          test_command \
+            "$PACKAGE/fibercoin-qt" \
+            "--version" \
+            "2.0.2.4"
+
+      - name: Create archive and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64"
+          ARCHIVE="$PACKAGE.tar.gz"
+
+          tar -czf "$ARCHIVE" "$PACKAGE"
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+
+          cat "$ARCHIVE.sha256"
+
+      - name: Upload Ubuntu package
+        uses: actions/upload-artifact@v5
+        with:
+          name: fibercoin-Ubuntu-24.04-x86_64
+          path: |
+            Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64.tar.gz
+            Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64.tar.gz.sha256
+            Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64/runtime-libraries.txt
+          if-no-files-found: error
