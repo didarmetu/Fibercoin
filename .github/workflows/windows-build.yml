@@ -84,7 +84,7 @@ jobs:
 
       - name: Upload build diagnostics
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: fibercoin-windows-11-x86_64-diagnostics
           path: windows-11-x86_64-build.log
@@ -151,7 +151,7 @@ jobs:
           cat "$ARCHIVE.sha256"
 
       - name: Upload Windows package
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: fibercoin-Windows-11-x86_64
           path: |
