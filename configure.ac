@@ -788,13 +788,16 @@ else
   fi
 fi
 
-AC_CHECK_LIB([crypto],[RAND_egd],[],[
+dnl RAND_egd was removed in OpenSSL 3.0, so its absence is no longer a valid
+dnl way to distinguish LibreSSL from OpenSSL. Check LibreSSL's version macro
+dnl directly instead.
+AC_CHECK_DECL([LIBRESSL_VERSION_NUMBER], [
   AC_ARG_WITH([libressl],
     [AS_HELP_STRING([--with-libressl],[Build with system LibreSSL (default is no; DANGEROUS; NOT SUPPORTED)])],
     [AC_MSG_WARN([Detected LibreSSL: This is NOT supported, and may break consensus compatibility!])],
     [AC_MSG_ERROR([Detected LibreSSL: This is NOT supported, and may break consensus compatibility!])]
   )
-])
+], [], [[#include <openssl/opensslv.h>]])
 
 dnl univalue check
 
