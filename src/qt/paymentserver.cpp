@@ -22,6 +22,8 @@
 #include <openssl/x509.h>
 #include <openssl/x509_vfy.h>
 
+#include <google/protobuf/stubs/common.h>
+
 #include <QApplication>
 #include <QByteArray>
 #include <QDataStream>
@@ -608,7 +610,13 @@ void PaymentServer::fetchPaymentACK(CWallet* wallet, SendCoinsRecipient recipien
         }
     }
 
+#if GOOGLE_PROTOBUF_VERSION >= 3001000
     const size_t serializedSize = payment.ByteSizeLong();
+#else
+    const size_t serializedSize =
+        static_cast<size_t>(payment.ByteSize());
+#endif
+
     if (serializedSize > static_cast<size_t>(std::numeric_limits<int>::max())) {
         qWarning() << "PaymentServer::fetchPaymentACK : Payment message too large to serialize";
         return;
