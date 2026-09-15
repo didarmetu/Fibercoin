@@ -46,7 +46,7 @@ jobs:
             zeromq \
             miniupnpc \
             qt@5 \
-            protobuf@21 \
+            protobuf \
             qrencode \
             dylibbundler
 
@@ -81,7 +81,7 @@ jobs:
           BREW_PREFIX="$(brew --prefix)"
           QT_PREFIX="$(brew --prefix qt@5)"
           OPENSSL_PREFIX="$(brew --prefix openssl@3)"
-          PROTOBUF_PREFIX="$(brew --prefix protobuf@21)"
+          PROTOBUF_PREFIX="$(brew --prefix protobuf)"
           BDB_PREFIX="$RUNNER_TEMP/bdb48"
 
           echo "$QT_PREFIX/bin" >> "$GITHUB_PATH"

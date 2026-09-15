@@ -17,6 +17,7 @@
 #include "wallet.h"
 
 #include <cstdlib>
+#include <limits>
 
 #include <openssl/x509.h>
 #include <openssl/x509_vfy.h>
@@ -607,7 +608,13 @@ void PaymentServer::fetchPaymentACK(CWallet* wallet, SendCoinsRecipient recipien
         }
     }
 
-    int length = payment.ByteSize();
+    const size_t serializedSize = payment.ByteSizeLong();
+    if (serializedSize > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        qWarning() << "PaymentServer::fetchPaymentACK : Payment message too large to serialize";
+        return;
+    }
+
+    const int length = static_cast<int>(serializedSize);
     netRequest.setHeader(QNetworkRequest::ContentLengthHeader, length);
     QByteArray serData(length, '\0');
     if (payment.SerializeToArray(serData.data(), length)) {
