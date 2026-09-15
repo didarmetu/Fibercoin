@@ -300,6 +300,46 @@ int64_t CMasternode::GetLastPaid()
     return 0;
 }
 
+int CMasternode::GetLastPaidBlock()
+{
+    const CBlockIndex* pindex = NULL;
+
+    {
+        LOCK(cs_main);
+        pindex = chainActive.Tip();
+    }
+
+    if (pindex == NULL)
+        return 0;
+
+    const CScript payee =
+        GetScriptForDestination(pubKeyCollateralAddress.GetID());
+
+    const int nMaxBlocks =
+        static_cast<int>(mnodeman.CountEnabled() * 1.25);
+
+    int nCheckedBlocks = 0;
+
+    LOCK(cs_mapMasternodeBlocks);
+
+    while (pindex != NULL &&
+           pindex->nHeight > 0 &&
+           nCheckedBlocks < nMaxBlocks) {
+        std::map<int, CMasternodeBlockPayees>::iterator it =
+            masternodePayments.mapMasternodeBlocks.find(pindex->nHeight);
+
+        if (it != masternodePayments.mapMasternodeBlocks.end() &&
+            it->second.HasPayeeWithVotes(payee, 2)) {
+            return pindex->nHeight;
+        }
+
+        pindex = pindex->pprev;
+        ++nCheckedBlocks;
+    }
+
+    return 0;
+}
+
 std::string CMasternode::GetStatus()
 {
     switch (nActiveState) {

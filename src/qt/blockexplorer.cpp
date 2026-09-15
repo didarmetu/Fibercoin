@@ -53,17 +53,21 @@ static std::string ValueToString(CAmount nValue, bool AllowNegative = false)
 static std::string ScriptToString(const CScript& Script, bool Long = false, bool Highlight = false)
 {
     if (Script.empty())
-        return "unknown";
+        return _("empty script");
 
     CTxDestination Dest;
     CBitcoinAddress Address;
+
     if (ExtractDestination(Script, Dest) && Address.Set(Dest)) {
         if (Highlight)
             return "<span class=\"addr\">" + Address.ToString() + "</span>";
-        else
-            return makeHRef(Address.ToString());
-    } else
-        return Long ? "<pre>" + FormatScript(Script) + "</pre>" : _("Non-standard script");
+
+        return makeHRef(Address.ToString());
+    }
+
+    return Long
+        ? "<pre>" + FormatScript(Script) + "</pre>"
+        : _("Non-standard script");
 }
 
 static std::string TimeToString(uint64_t Time)
@@ -119,7 +123,14 @@ static std::string TxToRow(const CTransaction& tx, const CScript& Highlight = CS
     for (unsigned int j = 0; j < tx.vout.size(); j++) {
         CTxOut Out = tx.vout[j];
         OutAmounts += ValueToString(Out.nValue);
-        OutAddresses += ScriptToString(Out.scriptPubKey, false, Out.scriptPubKey == Highlight);
+
+        if (tx.IsCoinStake() && Out.scriptPubKey.empty())
+            OutAddresses += _("PoS coinstake marker");
+        else
+            OutAddresses += ScriptToString(
+                Out.scriptPubKey,
+                false,
+                Out.scriptPubKey == Highlight);
         if (Out.scriptPubKey == Highlight)
             Delta += Out.nValue;
         if (j + 1 != tx.vout.size()) {
@@ -327,11 +338,24 @@ std::string TxToString(uint256 BlockHash, const CTransaction& tx)
         unsigned int nNext = 0;
         bool fAddrIndex = false;
         getNextIn(COutPoint(TxHash, i), HashNext, nNext);
+
+        const std::string redeemedIn =
+            (HashNext == uint256S("0"))
+                ? (fAddrIndex ? _("unspent") : _("not indexed"))
+                : "<span>" + makeHRef(HashNext.GetHex()) + ":" +
+                      itostr(nNext) + "</span>";
+
+        std::string outputAddress;
+        if (tx.IsCoinStake() && Out.scriptPubKey.empty())
+            outputAddress = _("PoS coinstake marker");
+        else
+            outputAddress = ScriptToString(Out.scriptPubKey, true);
+
         std::string OutputsContentCells[] =
             {
                 itostr(i),
-                (HashNext == uint256S("0")) ? (fAddrIndex ? _("no") : _("unknown")) : "<span>" + makeHRef(HashNext.GetHex()) + ":" + itostr(nNext) + "</span>",
-                ScriptToString(Out.scriptPubKey, true),
+                redeemedIn,
+                outputAddress,
                 ValueToString(Out.nValue)};
         OutputsContent += makeHTMLTableRow(OutputsContentCells, sizeof(OutputsContentCells) / sizeof(std::string));
     }
@@ -375,54 +399,22 @@ std::string TxToString(uint256 BlockHash, const CTransaction& tx)
 
 std::string AddressToString(const CBitcoinAddress& Address)
 {
-    std::string TxLabels[] =
-        {
-            _("Date"),
-            _("Hash"),
-            _("From"),
-            _("Amount"),
-            _("To"),
-            _("Amount"),
-            _("Delta"),
-            _("Balance")};
-    std::string TxContent = table + makeHTMLTableRow(TxLabels, sizeof(TxLabels) / sizeof(std::string));
-
-    std::set<COutPoint> PrevOuts;
-    /*
-    CScript AddressScript;
-    AddressScript.SetDestination(Address.Get());
-
-    CAmount Sum = 0;
-    bool fAddrIndex = false;
-
-    if (!fAddrIndex)
-        return ""; // it will take too long to find transactions by address
-    else
-    {
-        std::vector<CDiskTxPos> Txs;
-        paddressmap->GetTxs(Txs, AddressScript.GetID());
-        BOOST_FOREACH (const CDiskTxPos& pos, Txs)
-        {
-            CTransaction tx;
-            CBlock block;
-            uint256 bhash = block.GetHash();
-            GetTransaction(pos.nTxOffset, tx, bhash);
-            std::map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(block.GetHash());
-            if (mi == mapBlockIndex.end())
-                continue;
-            CBlockIndex* pindex = (*mi).second;
-            if (!pindex || !chainActive.Contains(pindex))
-                continue;
-            std::string Prepend = "<a href=\"" + itostr(pindex->nHeight) + "\">" + TimeToString(pindex->nTime) + "</a>";
-            TxContent += TxToRow(tx, AddressScript, Prepend, &Sum);
-        }
-    }
-    */
-    TxContent += "</table>";
-
     std::string Content;
-    Content += "<h1 style='color:#ffffff;'>" + _("Transactions to/from") + "&nbsp;<span>" + Address.ToString() + "</span></h1>";
-    Content += TxContent;
+
+    Content += "<h2>" + _("Address") + "&nbsp;<span class=\"addr\">" +
+               Address.ToString() + "</span></h2>";
+
+    Content += "<p>" +
+               _("Full address balance and transaction history are not available "
+                 "because this node does not maintain a persistent address index.") +
+               "</p>";
+
+    Content += "<p>" +
+               _("Block and transaction searches remain available. "
+                 "Address indexing can be added in a future release for fast "
+                 "balance and transaction-history searches.") +
+               "</p>";
+
     return Content;
 }
 
@@ -437,8 +429,8 @@ BlockExplorer::BlockExplorer(QWidget* parent) : QMainWindow(parent),
 
     connect(ui->pushSearch, SIGNAL(released()), this, SLOT(onSearch()));
     connect(ui->content, SIGNAL(linkActivated(const QString&)), this, SLOT(goTo(const QString&)));
-    connect(ui->back, SIGNAL(released()), this, SLOT(back()));
-    connect(ui->forward, SIGNAL(released()), this, SLOT(forward()));
+    connect(ui->back, SIGNAL(clicked()), this, SLOT(back()));
+    connect(ui->forward, SIGNAL(clicked()), this, SLOT(forward()));
 }
 
 BlockExplorer::~BlockExplorer()
@@ -516,10 +508,7 @@ bool BlockExplorer::switchTo(const QString& query)
     CBitcoinAddress Address;
     Address.SetString(query.toUtf8().constData());
     if (Address.IsValid()) {
-        std::string Content = AddressToString(Address);
-        if (Content.empty())
-            return false;
-        setContent(Content);
+        setContent(AddressToString(Address));
         return true;
     }
 
@@ -528,14 +517,28 @@ bool BlockExplorer::switchTo(const QString& query)
 
 void BlockExplorer::goTo(const QString& query)
 {
-    if (switchTo(query)) {
-        ui->searchBox->setText(query);
-        while (m_History.size() > m_HistoryIndex + 1)
-            m_History.pop_back();
-        m_History.push_back(query);
-        m_HistoryIndex = m_History.size() - 1;
+    const QString normalizedQuery = query.trimmed();
+    if (normalizedQuery.isEmpty())
+        return;
+
+    if (!switchTo(normalizedQuery))
+        return;
+
+    ui->searchBox->setText(normalizedQuery);
+
+    if (m_HistoryIndex >= 0 &&
+        m_HistoryIndex < m_History.size() &&
+        m_History[m_HistoryIndex] == normalizedQuery) {
         updateNavButtons();
+        return;
     }
+
+    while (m_History.size() > m_HistoryIndex + 1)
+        m_History.pop_back();
+
+    m_History.push_back(normalizedQuery);
+    m_HistoryIndex = m_History.size() - 1;
+    updateNavButtons();
 }
 
 void BlockExplorer::onSearch()
@@ -559,28 +562,65 @@ void BlockExplorer::setContent(const std::string& Content)
 
 void BlockExplorer::back()
 {
-    int NewIndex = m_HistoryIndex - 1;
-    if (0 <= NewIndex && NewIndex < m_History.size()) {
-        m_HistoryIndex = NewIndex;
-        ui->searchBox->setText(m_History[NewIndex]);
-        switchTo(m_History[NewIndex]);
-        updateNavButtons();
+    bool isBlockHeight = false;
+    const int64_t currentHeight =
+        ui->searchBox->text().toLongLong(&isBlockHeight);
+
+    if (isBlockHeight) {
+        if (currentHeight > 0)
+            goTo(QString::number(currentHeight - 1));
+        return;
     }
+
+    const int newIndex = m_HistoryIndex - 1;
+    if (newIndex < 0 || newIndex >= m_History.size())
+        return;
+
+    m_HistoryIndex = newIndex;
+    ui->searchBox->setText(m_History[newIndex]);
+    switchTo(m_History[newIndex]);
+    updateNavButtons();
 }
 
 void BlockExplorer::forward()
 {
-    int NewIndex = m_HistoryIndex + 1;
-    if (0 <= NewIndex && NewIndex < m_History.size()) {
-        m_HistoryIndex = NewIndex;
-        ui->searchBox->setText(m_History[NewIndex]);
-        switchTo(m_History[NewIndex]);
-        updateNavButtons();
+    bool isBlockHeight = false;
+    const int64_t currentHeight =
+        ui->searchBox->text().toLongLong(&isBlockHeight);
+
+    if (isBlockHeight) {
+        if (chainActive.Tip() &&
+            currentHeight < chainActive.Tip()->nHeight) {
+            goTo(QString::number(currentHeight + 1));
+        }
+        return;
     }
+
+    const int newIndex = m_HistoryIndex + 1;
+    if (newIndex < 0 || newIndex >= m_History.size())
+        return;
+
+    m_HistoryIndex = newIndex;
+    ui->searchBox->setText(m_History[newIndex]);
+    switchTo(m_History[newIndex]);
+    updateNavButtons();
 }
 
 void BlockExplorer::updateNavButtons()
 {
-    ui->back->setEnabled(m_HistoryIndex - 1 >= 0);
-    ui->forward->setEnabled(m_HistoryIndex + 1 < m_History.size());
+    bool isBlockHeight = false;
+    const int64_t currentHeight =
+        ui->searchBox->text().toLongLong(&isBlockHeight);
+
+    if (isBlockHeight && chainActive.Tip()) {
+        ui->back->setEnabled(currentHeight > 0);
+        ui->forward->setEnabled(
+            currentHeight < chainActive.Tip()->nHeight);
+        return;
+    }
+
+    ui->back->setEnabled(m_HistoryIndex > 0);
+    ui->forward->setEnabled(
+        m_HistoryIndex >= 0 &&
+        m_HistoryIndex + 1 < m_History.size());
 }

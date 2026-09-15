@@ -41,6 +41,13 @@ private:
     void unsubscribeFromCoreSignals();
 
     QPixmap pixmap;
+    QString titleText;
+    QString versionText;
+    QString copyrightTextBtc;
+    QString copyrightTextDash;
+    QString copyrightTextPIVX;
+    QString copyrightTextFBC;
+    QString titleAddText;
     QString curMessage;
     QColor curColor;
     int curAlignment;

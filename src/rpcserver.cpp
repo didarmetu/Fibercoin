@@ -473,8 +473,25 @@ CNetAddr BoostAsioToCNetAddr(boost::asio::ip::address address)
         bool v4Prefix = true;
         for (size_t i = 0; i < 10; ++i)
             v4Prefix &= bytes[i] == 0;
-        const bool v4Compatible = v4Prefix && bytes[10] == 0 && bytes[11] == 0;
-        const bool v4Mapped = v4Prefix && bytes[10] == 0xff && bytes[11] == 0xff;
+        const bool isUnspecified =
+            bytes[12] == 0 && bytes[13] == 0 &&
+            bytes[14] == 0 && bytes[15] == 0;
+
+        const bool isLoopback =
+            bytes[12] == 0 && bytes[13] == 0 &&
+            bytes[14] == 0 && bytes[15] == 1;
+
+        const bool v4Compatible =
+            v4Prefix &&
+            bytes[10] == 0 &&
+            bytes[11] == 0 &&
+            !isUnspecified &&
+            !isLoopback;
+
+        const bool v4Mapped =
+            v4Prefix &&
+            bytes[10] == 0xff &&
+            bytes[11] == 0xff;
         if (v4Compatible || v4Mapped) {
             boost::asio::ip::address_v4::bytes_type v4bytes = {{bytes[12], bytes[13], bytes[14], bytes[15]}};
             address = boost::asio::ip::address_v4(v4bytes);

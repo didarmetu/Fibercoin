@@ -25,66 +25,25 @@
 
 SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle* networkStyle) : QWidget(0, f), curAlignment(0)
 {
-    // set reference point, paddings
-    int paddingLeft = 23;
-    int paddingTop = 580;
-    int titleVersionVSpace = 17;
-    int titleCopyrightVSpace = 32;
+    titleText = tr("Fibercoin");
+    versionText =
+        QString(tr("Version %1"))
+            .arg(QString::fromStdString(FormatFullVersion()));
+    copyrightTextBtc =
+        QChar(0xA9) + QString(" 2009-%1 ").arg(COPYRIGHT_YEAR) +
+        QString(tr("The Bitcoin Core developers"));
+    copyrightTextDash =
+        QChar(0xA9) + QString(" 2014-%1 ").arg(COPYRIGHT_YEAR) +
+        QString(tr("The Dash Core developers"));
+    copyrightTextPIVX =
+        QChar(0xA9) + QString(" 2015-%1 ").arg(COPYRIGHT_YEAR) +
+        QString(tr("The PIVX Core developers"));
+    copyrightTextFBC =
+        QChar(0xA9) + QString(" 2019-%1 ").arg(COPYRIGHT_YEAR) +
+        QString(tr("The Fibercoin developers"));
+    titleAddText = networkStyle->getTitleAddText();
 
-    float fontFactor = 1.0;
-
-    // define text to place
-    QString titleText = tr("Fibercoin");
-    QString versionText = QString(tr("Version %1")).arg(QString::fromStdString(FormatFullVersion()));
-    QString copyrightTextBtc = QChar(0xA9) + QString(" 2009-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The Bitcoin Core developers"));
-    QString copyrightTextDash = QChar(0xA9) + QString(" 2014-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The Dash Core developers"));
-    QString copyrightTextPIVX = QChar(0xA9) + QString(" 2015-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The PIVX Core developers"));
-    QString copyrightTextFBC = QChar(0xA9) + QString(" 2019-%1 ").arg(COPYRIGHT_YEAR) + QString(tr("The Fibercoin developers"));
-    QString titleAddText = networkStyle->getTitleAddText();
-
-    QString font = QApplication::font().toString();
-
-    // load the bitmap for writing some text over it
     pixmap = networkStyle->getSplashImage();
-
-    QPainter pixPaint(&pixmap);
-    pixPaint.setPen(QColor(255, 255, 255));
-
-    // check font size and drawing with
-    pixPaint.setFont(QFont(font, 28 * fontFactor));
-    QFontMetrics fm = pixPaint.fontMetrics();
-    int titleTextWidth = fm.width(titleText);
-    if (titleTextWidth > 160) {
-        // strange font rendering, Arial probably not found
-        fontFactor = 0.75;
-    }
-
-    pixPaint.setFont(QFont(font, 28 * fontFactor));
-    fm = pixPaint.fontMetrics();
-    //titleTextWidth = fm.width(titleText);
-    pixPaint.drawText(paddingLeft, paddingTop, titleText);
-
-    pixPaint.setFont(QFont(font, 15 * fontFactor));
-    pixPaint.drawText(paddingLeft, paddingTop + titleVersionVSpace, versionText);
-
-    // draw copyright stuff
-    pixPaint.setFont(QFont(font, 10 * fontFactor));
-    pixPaint.drawText(paddingLeft, paddingTop + titleCopyrightVSpace, copyrightTextBtc);
-    pixPaint.drawText(paddingLeft, paddingTop + titleCopyrightVSpace + 12, copyrightTextDash);
-    pixPaint.drawText(paddingLeft, paddingTop + titleCopyrightVSpace + 24, copyrightTextPIVX);
-    pixPaint.drawText(paddingLeft, paddingTop + titleCopyrightVSpace + 36, copyrightTextFBC);
-
-    // draw additional text if special network
-    if (!titleAddText.isEmpty()) {
-        QFont boldFont = QFont(font, 10 * fontFactor);
-        boldFont.setWeight(QFont::Bold);
-        pixPaint.setFont(boldFont);
-        fm = pixPaint.fontMetrics();
-        int titleAddTextWidth = fm.width(titleAddText);
-        pixPaint.drawText(pixmap.width() - titleAddTextWidth - 10, pixmap.height() - 25, titleAddText);
-    }
-
-    pixPaint.end();
 
     // Set window title
     setWindowTitle(titleText + " " + titleAddText);
@@ -161,11 +120,71 @@ void SplashScreen::showMessage(const QString& message, int alignment, const QCol
 
 void SplashScreen::paintEvent(QPaintEvent* event)
 {
+    Q_UNUSED(event);
+
+    const int paddingLeft = 23;
+    const int paddingTop = 580;
+    const int titleVersionVSpace = 17;
+    const int titleCopyrightVSpace = 32;
+
+    float fontFactor = 1.0;
+    const QString font = QApplication::font().family();
+
     QPainter painter(this);
-    painter.drawPixmap(0, 0, pixmap);
-    QRect r = rect().adjusted(5, 5, -5, -5);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    painter.drawPixmap(rect(), pixmap);
+    painter.setPen(QColor(255, 255, 255));
+
+    painter.setFont(QFont(font, 28 * fontFactor));
+    QFontMetrics fm = painter.fontMetrics();
+    if (fm.width(titleText) > 160)
+        fontFactor = 0.75;
+
+    painter.setFont(QFont(font, 28 * fontFactor));
+    painter.drawText(paddingLeft, paddingTop, titleText);
+
+    painter.setFont(QFont(font, 15 * fontFactor));
+    painter.drawText(
+        paddingLeft,
+        paddingTop + titleVersionVSpace,
+        versionText);
+
+    painter.setFont(QFont(font, 10 * fontFactor));
+    painter.drawText(
+        paddingLeft,
+        paddingTop + titleCopyrightVSpace,
+        copyrightTextBtc);
+    painter.drawText(
+        paddingLeft,
+        paddingTop + titleCopyrightVSpace + 12,
+        copyrightTextDash);
+    painter.drawText(
+        paddingLeft,
+        paddingTop + titleCopyrightVSpace + 24,
+        copyrightTextPIVX);
+    painter.drawText(
+        paddingLeft,
+        paddingTop + titleCopyrightVSpace + 36,
+        copyrightTextFBC);
+
+    if (!titleAddText.isEmpty()) {
+        QFont boldFont(font, 10 * fontFactor);
+        boldFont.setWeight(QFont::Bold);
+        painter.setFont(boldFont);
+        fm = painter.fontMetrics();
+
+        const int titleAddTextWidth = fm.width(titleAddText);
+        painter.drawText(
+            width() - titleAddTextWidth - 10,
+            height() - 25,
+            titleAddText);
+    }
+
+    const QRect messageRect = rect().adjusted(5, 5, -5, -5);
     painter.setPen(curColor);
-    painter.drawText(r, curAlignment, curMessage);
+    painter.drawText(messageRect, curAlignment, curMessage);
 }
 
 void SplashScreen::closeEvent(QCloseEvent* event)

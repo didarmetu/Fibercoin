@@ -210,15 +210,21 @@ UniValue listmasternodes(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"rank\": n,           (numeric) Masternode Rank (or 0 if not enabled)\n"
-            "    \"txhash\": \"hash\",    (string) Collateral transaction hash\n"
-            "    \"outidx\": n,         (numeric) Collateral transaction output index\n"
-            "    \"status\": s,         (string) Status (ENABLED/EXPIRED/REMOVE/etc)\n"
-            "    \"addr\": \"addr\",      (string) Masternode FBC address\n"
-            "    \"version\": v,        (numeric) Masternode protocol version\n"
-            "    \"lastseen\": ttt,     (numeric) The time in seconds since epoch (Jan 1 1970 GMT) of the last seen\n"
-            "    \"activetime\": ttt,   (numeric) The time in seconds since epoch (Jan 1 1970 GMT) masternode has been active\n"
-            "    \"lastpaid\": ttt,     (numeric) The time in seconds since epoch (Jan 1 1970 GMT) masternode was last paid\n"
+            "    \"rank\": n,                (numeric) Masternode Rank (or 0 if not enabled)\n"
+            "    \"network\": \"xxxx\",       (string) Network type (ipv4/ipv6/onion)\n"
+            "    \"ip_address\": \"x.x.x.x\", (string) Masternode IP address\n"
+            "    \"port\": n,                (numeric) Masternode network port\n"
+            "    \"service\": \"host:port\", (string) Full masternode service endpoint\n"
+            "    \"txhash\": \"hash\",       (string) Collateral transaction hash\n"
+            "    \"outidx\": n,              (numeric) Collateral transaction output index\n"
+            "    \"status\": s,              (string) Status (ENABLED/EXPIRED/REMOVE/etc)\n"
+            "    \"addr\": \"addr\",         (string) Masternode FBC address\n"
+            "    \"version\": v,             (numeric) Masternode protocol version\n"
+            "    \"sigtime\": ttt,           (numeric) Masternode broadcast time in seconds since epoch\n"
+            "    \"lastseen\": ttt,          (numeric) The time in seconds since epoch (Jan 1 1970 GMT) of the last seen\n"
+            "    \"activetime\": ttt,        (numeric) The time in seconds since epoch (Jan 1 1970 GMT) masternode has been active\n"
+            "    \"lastpaid\": ttt,          (numeric) The time in seconds since epoch (Jan 1 1970 GMT) masternode was last paid\n"
+            "    \"last_paid_block\": n,     (numeric) Block height of the most recent masternode payment\n"
             "  }\n"
             "  ,...\n"
             "]\n"
@@ -256,14 +262,19 @@ UniValue listmasternodes(const UniValue& params, bool fHelp)
 
             obj.push_back(Pair("rank", (strStatus == "ENABLED" ? s.first : 0)));
             obj.push_back(Pair("network", strNetwork));
+            obj.push_back(Pair("ip_address", strHost));
+            obj.push_back(Pair("port", port));
+            obj.push_back(Pair("service", mn->addr.ToString()));
             obj.push_back(Pair("txhash", strTxHash));
             obj.push_back(Pair("outidx", (uint64_t)oIdx));
             obj.push_back(Pair("status", strStatus));
             obj.push_back(Pair("addr", CBitcoinAddress(mn->pubKeyCollateralAddress.GetID()).ToString()));
             obj.push_back(Pair("version", mn->protocolVersion));
+            obj.push_back(Pair("sigtime", (int64_t)mn->sigTime));
             obj.push_back(Pair("lastseen", (int64_t)mn->lastPing.sigTime));
             obj.push_back(Pair("activetime", (int64_t)(mn->lastPing.sigTime - mn->sigTime)));
             obj.push_back(Pair("lastpaid", (int64_t)mn->GetLastPaid()));
+            obj.push_back(Pair("last_paid_block", mn->GetLastPaidBlock()));
 
             ret.push_back(obj);
         }
