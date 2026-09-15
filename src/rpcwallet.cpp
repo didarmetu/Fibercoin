@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include "spork.h"
+#include <boost/bind.hpp>
 #include <boost/assign/list_of.hpp>
 
 #include <univalue.h>

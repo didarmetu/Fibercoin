@@ -58,6 +58,7 @@
 #include <QUrlQuery>
 #include <QVBoxLayout>
 #include <QPixmap>
+#include <boost/bind.hpp>
 
 const QString BitcoinGUI::DEFAULT_WALLET = "~Default";
 

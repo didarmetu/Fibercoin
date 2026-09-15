@@ -15,6 +15,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/version.hpp>
 
 #include <univalue.h>
 
@@ -111,32 +112,56 @@ public:
     bool connect(const std::string& server, const std::string& port)
     {
         using namespace boost::asio::ip;
+
+#if BOOST_VERSION >= 106600
+        tcp::resolver resolver(stream.get_executor());
+        tcp::resolver::results_type endpoints;
+
+        try {
+            endpoints = resolver.resolve(server, port);
+        } catch (boost::system::system_error&) {
+            endpoints = resolver.resolve(
+                server,
+                port,
+                boost::asio::ip::resolver_base::flags());
+        }
+
+        boost::system::error_code error;
+        boost::asio::connect(stream.next_layer(), endpoints, error);
+        return !error;
+#else
         tcp::resolver resolver(stream.get_io_service());
         tcp::resolver::iterator endpoint_iterator;
+
 #if BOOST_VERSION >= 104300
         try {
 #endif
-            // The default query (flags address_configured) tries IPv6 if
-            // non-localhost IPv6 configured, and IPv4 if non-localhost IPv4
-            // configured.
             tcp::resolver::query query(server.c_str(), port.c_str());
             endpoint_iterator = resolver.resolve(query);
+
 #if BOOST_VERSION >= 104300
-        } catch (boost::system::system_error& e) {
-            // If we at first don't succeed, try blanket lookup (IPv4+IPv6 independent of configured interfaces)
-            tcp::resolver::query query(server.c_str(), port.c_str(), resolver_query_base::flags());
+        } catch (boost::system::system_error&) {
+            tcp::resolver::query query(
+                server.c_str(),
+                port.c_str(),
+                resolver_query_base::flags());
             endpoint_iterator = resolver.resolve(query);
         }
 #endif
-        boost::system::error_code error = boost::asio::error::host_not_found;
+
+        boost::system::error_code error =
+            boost::asio::error::host_not_found;
         tcp::resolver::iterator end;
+
         while (error && endpoint_iterator != end) {
             stream.lowest_layer().close();
-            stream.lowest_layer().connect(*endpoint_iterator++, error);
+            stream.lowest_layer().connect(
+                *endpoint_iterator++,
+                error);
         }
-        if (error)
-            return false;
-        return true;
+
+        return !error;
+#endif
     }
 
 private:

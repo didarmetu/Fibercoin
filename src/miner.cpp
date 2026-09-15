@@ -25,6 +25,7 @@
 #include "masternode-payments.h"
 #include "spork.h"
 
+#include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>
 

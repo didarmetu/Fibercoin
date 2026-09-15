@@ -16,6 +16,7 @@
 #include "ui_interface.h"
 #include "util.h"
 
+#include <boost/bind.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>

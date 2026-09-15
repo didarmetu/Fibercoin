@@ -23,6 +23,7 @@
 #include <QDebug>
 #include <QIcon>
 #include <QList>
+#include <boost/bind.hpp>
 
 // Amount column is right-aligned it contains numbers
 static int column_alignments[] = {

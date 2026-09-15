@@ -108,7 +108,10 @@ AC_DEFUN([AX_BOOST_SYSTEM],
 
             fi
             if test "x$ax_lib" = "x"; then
-                AC_MSG_ERROR(Could not find a version of the boost_system library!)
+                AC_MSG_NOTICE([No compiled Boost.System library found; using header-only Boost.System])
+                BOOST_SYSTEM_LIB=""
+                BOOST_CPPFLAGS="$BOOST_CPPFLAGS -DBOOST_ERROR_CODE_HEADER_ONLY"
+                link_system="yes"
             fi
 			if test "x$link_system" = "xno"; then
 				AC_MSG_ERROR(Could not link against $ax_lib !)
