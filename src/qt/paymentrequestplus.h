@@ -33,7 +33,7 @@ public:
     QString getPKIType() const;
     // Returns true if merchant's identity is authenticated, and
     // returns human-readable merchant identity in merchant
-    bool getMerchant(X509_STORE* certStore, QString& merchant) const;
+    bool getMerchant(X509_STORE* certStore, QString& merchant, uint verificationTime = 0) const;
 
     // Returns list of outputs, amount
     QList<std::pair<CScript, CAmount> > getPayTo() const;

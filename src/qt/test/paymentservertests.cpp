@@ -61,6 +61,7 @@ static SendCoinsRecipient handleRequest(PaymentServer* server, std::vector<unsig
 
 void PaymentServerTests::paymentServerTests()
 {
+    const uint testVerificationTime = 1362096000U; // 2013-03-01 00:00:00 UTC
     SelectParams(CBaseChainParams::MAIN);
     OptionsModel optionsModel;
     PaymentServer* server = new PaymentServer(NULL, false);
@@ -74,31 +75,31 @@ void PaymentServerTests::paymentServerTests()
     std::vector<unsigned char> data = DecodeBase64(paymentrequest1_BASE64);
     SendCoinsRecipient r = handleRequest(server, data);
     QString merchant;
-    r.paymentRequest.getMerchant(caStore, merchant);
+    r.paymentRequest.getMerchant(caStore, merchant, testVerificationTime);
     QCOMPARE(merchant, QString("testmerchant.org"));
 
     // Version of the above, with an expired certificate:
     data = DecodeBase64(paymentrequest2_BASE64);
     r = handleRequest(server, data);
-    r.paymentRequest.getMerchant(caStore, merchant);
+    r.paymentRequest.getMerchant(caStore, merchant, testVerificationTime);
     QCOMPARE(merchant, QString(""));
 
     // Long certificate chain:
     data = DecodeBase64(paymentrequest3_BASE64);
     r = handleRequest(server, data);
-    r.paymentRequest.getMerchant(caStore, merchant);
+    r.paymentRequest.getMerchant(caStore, merchant, testVerificationTime);
     QCOMPARE(merchant, QString("testmerchant8.org"));
 
     // Long certificate chain, with an expired certificate in the middle:
     data = DecodeBase64(paymentrequest4_BASE64);
     r = handleRequest(server, data);
-    r.paymentRequest.getMerchant(caStore, merchant);
+    r.paymentRequest.getMerchant(caStore, merchant, testVerificationTime);
     QCOMPARE(merchant, QString(""));
 
     // Validly signed, but by a CA not in our root CA list:
     data = DecodeBase64(paymentrequest5_BASE64);
     r = handleRequest(server, data);
-    r.paymentRequest.getMerchant(caStore, merchant);
+    r.paymentRequest.getMerchant(caStore, merchant, testVerificationTime);
     QCOMPARE(merchant, QString(""));
 
     // Try again with no root CA's, verifiedMerchant should be empty:
@@ -106,7 +107,7 @@ void PaymentServerTests::paymentServerTests()
     PaymentServer::LoadRootCAs(caStore);
     data = DecodeBase64(paymentrequest1_BASE64);
     r = handleRequest(server, data);
-    r.paymentRequest.getMerchant(caStore, merchant);
+    r.paymentRequest.getMerchant(caStore, merchant, testVerificationTime);
     QCOMPARE(merchant, QString(""));
 
     // Just get some random data big enough to trigger BIP70 DoS protection

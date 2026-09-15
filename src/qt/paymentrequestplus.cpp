@@ -64,7 +64,7 @@ QString PaymentRequestPlus::getPKIType() const
     return QString::fromStdString(paymentRequest.pki_type());
 }
 
-bool PaymentRequestPlus::getMerchant(X509_STORE* certStore, QString& merchant) const
+bool PaymentRequestPlus::getMerchant(X509_STORE* certStore, QString& merchant, uint verificationTime) const
 {
     merchant.clear();
 
@@ -93,7 +93,9 @@ bool PaymentRequestPlus::getMerchant(X509_STORE* certStore, QString& merchant) c
     }
 
     std::vector<X509*> certs;
-    const QDateTime currentTime = QDateTime::currentDateTime();
+    const QDateTime currentTime = verificationTime == 0
+        ? QDateTime::currentDateTimeUtc()
+        : QDateTime::fromTime_t(verificationTime, Qt::UTC);
     for (int i = 0; i < certChain.certificate_size(); i++) {
         QByteArray certData(certChain.certificate(i).data(), certChain.certificate(i).size());
         QSslCertificate qCert(certData, QSsl::Der);
@@ -141,6 +143,13 @@ bool PaymentRequestPlus::getMerchant(X509_STORE* certStore, QString& merchant) c
         if (!X509_STORE_CTX_init(store_ctx, certStore, signing_cert, chain)) {
             int error = X509_STORE_CTX_get_error(store_ctx);
             throw SSLVerifyError(X509_verify_cert_error_string(error));
+        }
+
+        if (verificationTime != 0) {
+            X509_STORE_CTX_set_time(
+                store_ctx,
+                0,
+                static_cast<time_t>(verificationTime));
         }
 
         // Now do the verification!
