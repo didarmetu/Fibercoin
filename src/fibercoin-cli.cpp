@@ -14,6 +14,7 @@
 #include "utilstrencodings.h"
 
 #include <boost/filesystem/operations.hpp>
+#include <boost/version.hpp>
 
 #include <univalue.h>
 
@@ -104,8 +105,12 @@ UniValue CallRPC(const string& strMethod, const UniValue& params)
 {
     // Connect to localhost
     bool fUseSSL = GetBoolArg("-rpcssl", false);
+#if BOOST_VERSION >= 106600
+    asio::io_context io_service;
+#else
     asio::io_service io_service;
-    ssl::context context(io_service, ssl::context::sslv23);
+#endif
+    ssl::context context(ssl::context::sslv23);
     context.set_options(ssl::context::no_sslv2 | ssl::context::no_sslv3);
     asio::ssl::stream<asio::ip::tcp::socket> sslStream(io_service, context);
     SSLIOStreamDevice<asio::ip::tcp> d(sslStream, fUseSSL);
