@@ -468,8 +468,18 @@ CNetAddr BoostAsioToCNetAddr(boost::asio::ip::address address)
 {
     CNetAddr netaddr;
     // Make sure that IPv4-compatible and IPv4-mapped IPv6 addresses are treated as IPv4 addresses
-    if (address.is_v6() && (address.to_v6().is_v4_compatible() || address.to_v6().is_v4_mapped()))
-        address = address.to_v6().to_v4();
+    if (address.is_v6()) {
+        const boost::asio::ip::address_v6::bytes_type bytes = address.to_v6().to_bytes();
+        bool v4Prefix = true;
+        for (size_t i = 0; i < 10; ++i)
+            v4Prefix &= bytes[i] == 0;
+        const bool v4Compatible = v4Prefix && bytes[10] == 0 && bytes[11] == 0;
+        const bool v4Mapped = v4Prefix && bytes[10] == 0xff && bytes[11] == 0xff;
+        if (v4Compatible || v4Mapped) {
+            boost::asio::ip::address_v4::bytes_type v4bytes = {{bytes[12], bytes[13], bytes[14], bytes[15]}};
+            address = boost::asio::ip::address_v4(v4bytes);
+        }
+    }
 
     if (address.is_v4()) {
         boost::asio::ip::address_v4::bytes_type bytes = address.to_v4().to_bytes();
@@ -495,7 +505,7 @@ class AcceptedConnectionImpl : public AcceptedConnection
 {
 public:
     AcceptedConnectionImpl(
-        asio::io_service& io_service,
+        RPCIOContext& io_service,
         ssl::context& context,
         bool fUseSSL) : sslStream(io_service, context),
                         _d(sslStream, fUseSSL),
@@ -722,7 +732,13 @@ void StartRPCThreads()
                 v6_only_error);
 
             acceptor->bind(endpoint);
-            acceptor->listen(socket_base::max_connections);
+#if BOOST_VERSION >= 106600
+            acceptor->listen(
+                socket_base::max_listen_connections);
+#else
+            acceptor->listen(
+                socket_base::max_connections);
+#endif
 
             RPCListen(acceptor, *rpc_ssl_context, fUseSSL);
 
@@ -756,7 +772,7 @@ void StartDummyRPCThread()
         rpc_io_service = new RPCIOContext();
         /* Create dummy "work" to keep the thread from exiting when no timeouts active,
          * see http://www.boost.org/doc/libs/1_51_0/doc/html/boost_asio/reference/io_service.html#boost_asio.reference.io_service.stopping_the_io_service_from_running_out_of_work */
-        #if BOOST_VERSION >= 106600
+#if BOOST_VERSION >= 106600
         rpc_dummy_work = new RPCWorkGuard(
             asio::make_work_guard(*rpc_io_service));
 #else
@@ -851,9 +867,11 @@ void RPCRunLater(const std::string& name, boost::function<void(void)> func, int6
     }
 
 #if BOOST_VERSION >= 106600
-    deadlineTimers[name]->expires_after(std::chrono::seconds(nSeconds));
+    deadlineTimers[name]->expires_after(
+        std::chrono::seconds(nSeconds));
 #else
-    deadlineTimers[name]->expires_from_now(posix_time::seconds(nSeconds));
+    deadlineTimers[name]->expires_from_now(
+        boost::posix_time::seconds(nSeconds));
 #endif
 
     deadlineTimers[name]->async_wait(boost::bind(RPCRunHandler, _1, func));
