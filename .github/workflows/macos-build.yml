@@ -1,0 +1,513 @@
+name: macOS Universal Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - upgrade/build-modernization
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: macos-15-intel
+          - arch: arm64
+            runner: macos-15
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Show build environment
+        run: |
+          uname -a
+          uname -m
+          xcodebuild -version
+          clang++ --version
+          brew --version
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            boost \
+            openssl@3.5 \
+            libevent \
+            zeromq \
+            miniupnpc \
+            qt@5 \
+            protobuf@21 \
+            qrencode \
+            dylibbundler
+
+      - name: Build Berkeley DB 4.8
+        run: |
+          BDB_SOURCE="$RUNNER_TEMP/bdb-source"
+          BDB_PREFIX="$RUNNER_TEMP/bdb48"
+
+          mkdir -p "$BDB_SOURCE" "$BDB_PREFIX"
+          cd "$BDB_SOURCE"
+
+          curl --location --fail             --output db-4.8.30.NC.tar.gz             https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
+
+          echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db-4.8.30.NC.tar.gz"             | shasum -a 256 -c -
+
+          tar -xzf db-4.8.30.NC.tar.gz
+          cd db-4.8.30.NC
+
+          sed -i.bak             's/__atomic_compare_exchange/__atomic_compare_exchange_db/g'             dbinc/atomic.h
+
+          sed -i.bak             's/atomic_init/atomic_init_db/g'             dbinc/atomic.h             mp/mp_region.c             mp/mp_mvcc.c             mp/mp_fget.c             mutex/mut_method.c             mutex/mut_tas.c
+
+          cd build_unix
+
+          CFLAGS="-Wno-error=implicit-function-declaration" ../dist/configure             --prefix="$BDB_PREFIX"             --enable-cxx             --disable-shared             --disable-replication
+
+          make -j"$(sysctl -n hw.logicalcpu)"
+          make install
+
+      - name: Configure environment
+        run: |
+          BREW_PREFIX="$(brew --prefix)"
+          QT_PREFIX="$(brew --prefix qt@5)"
+          OPENSSL_PREFIX="$(brew --prefix openssl@3.5)"
+          PROTOBUF_PREFIX="$(brew --prefix protobuf@21)"
+          BDB_PREFIX="$RUNNER_TEMP/bdb48"
+
+          echo "$QT_PREFIX/bin" >> "$GITHUB_PATH"
+          echo "$PROTOBUF_PREFIX/bin" >> "$GITHUB_PATH"
+
+          echo "CPPFLAGS=-I$BREW_PREFIX/include -I$OPENSSL_PREFIX/include -I$BDB_PREFIX/include" >> "$GITHUB_ENV"
+          echo "LDFLAGS=-L$BREW_PREFIX/lib -L$OPENSSL_PREFIX/lib -L$BDB_PREFIX/lib" >> "$GITHUB_ENV"
+          echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> "$GITHUB_ENV"
+          echo "PKG_CONFIG_PATH=$QT_PREFIX/lib/pkgconfig:$OPENSSL_PREFIX/lib/pkgconfig:$PROTOBUF_PREFIX/lib/pkgconfig:$BREW_PREFIX/lib/pkgconfig" >> "$GITHUB_ENV"
+
+      - name: Generate build system
+        run: ./autogen.sh
+
+      - name: Configure
+        run: |
+          ./configure \
+            --disable-tests \
+            --with-gui=qt5 \
+            --with-boost="$(brew --prefix boost)" \
+            --with-boost-libdir="$(brew --prefix boost)/lib" \
+            --with-miniupnpc
+
+      - name: Compile all targets and collect diagnostics
+        id: compile
+        shell: bash
+        run: |
+          set +e
+          make -k -j"$(sysctl -n hw.logicalcpu)" V=1 2>&1             | tee "macos-${{ matrix.arch }}-build.log"
+          build_status=${PIPESTATUS[0]}
+          echo "status=$build_status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload compile diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fibercoin-macos-${{ matrix.arch }}-diagnostics
+          path: macos-${{ matrix.arch }}-build.log
+          if-no-files-found: error
+
+      - name: Stop after compile failure
+        if: steps.compile.outputs.status != '0'
+        run: exit 1
+
+      - name: Show compiled architectures
+        run: |
+          find src -type f -perm -111 -maxdepth 3 -print
+          find src -type f -perm -111 -maxdepth 3 \
+            -exec file {} \;
+
+      - name: Create portable architecture package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STAGE="macos-${{ matrix.arch }}"
+          APP="$STAGE/Fibercoin-Qt.app"
+          APP_MACOS="$APP/Contents/MacOS"
+          APP_FRAMEWORKS="$APP/Contents/Frameworks"
+          PLIST="$APP/Contents/Info.plist"
+
+          mkdir -p \
+            "$STAGE/bin" \
+            "$STAGE/lib" \
+            "$APP_MACOS" \
+            "$APP_FRAMEWORKS"
+
+          cp src/fibercoind "$STAGE/bin/"
+          cp src/fibercoin-cli "$STAGE/bin/"
+          cp src/fibercoin-tx "$STAGE/bin/"
+          cp src/qt/fibercoin-qt "$APP_MACOS/"
+
+          chmod +x \
+            "$STAGE/bin/fibercoind" \
+            "$STAGE/bin/fibercoin-cli" \
+            "$STAGE/bin/fibercoin-tx" \
+            "$APP_MACOS/fibercoin-qt"
+
+          plutil -create xml1 "$PLIST"
+          plutil -insert CFBundleName \
+            -string "Fibercoin-Qt" "$PLIST"
+          plutil -insert CFBundleDisplayName \
+            -string "Fibercoin" "$PLIST"
+          plutil -insert CFBundleExecutable \
+            -string "fibercoin-qt" "$PLIST"
+          plutil -insert CFBundleIdentifier \
+            -string "org.fibercoin.Fibercoin-Qt" "$PLIST"
+          plutil -insert CFBundlePackageType \
+            -string "APPL" "$PLIST"
+          plutil -insert CFBundleVersion \
+            -string "2.0.2.4" "$PLIST"
+          plutil -insert CFBundleShortVersionString \
+            -string "2.0.2.4" "$PLIST"
+          plutil -insert LSMinimumSystemVersion \
+            -string "15.0" "$PLIST"
+          plutil -insert NSHighResolutionCapable \
+            -bool true "$PLIST"
+          plutil -insert CFBundleIconFile \
+            -string "Fibercoin.icns" "$PLIST"
+
+          mkdir -p "$APP/Contents/Resources"
+          cp src/qt/res/icons/bitcoin.icns \
+            "$APP/Contents/Resources/Fibercoin.icns"
+
+          # Bundle non-Qt libraries before macdeployqt rewrites their paths.
+          dylibbundler \
+            -od \
+            -b \
+            -x "$APP_MACOS/fibercoin-qt" \
+            -d "$APP_FRAMEWORKS" \
+            -p '@executable_path/../Frameworks/'
+
+          "$(brew --prefix qt@5)/bin/macdeployqt" \
+            "$APP" \
+            -always-overwrite \
+            -verbose=2
+
+          # Bundle dependencies for all CLI executables in one pass.
+          # Using -od separately would erase libraries copied by earlier passes.
+          dylibbundler \
+            -od \
+            -b \
+            -x "$STAGE/bin/fibercoind" \
+            -x "$STAGE/bin/fibercoin-cli" \
+            -x "$STAGE/bin/fibercoin-tx" \
+            -d "$STAGE/lib" \
+            -p '@executable_path/../lib/'
+
+          # macdeployqt copies Qt plugins and rewrites their dependencies,
+          # but Homebrew Qt plugins retain an absolute LC_ID_DYLIB.
+          # Normalize plugin identities so the final package contains no
+          # Homebrew paths.
+          while IFS= read -r -d '' plugin; do
+            if file "$plugin" | grep -q "Mach-O"; then
+              install_name_tool \
+                -id "@rpath/$(basename "$plugin")" \
+                "$plugin"
+            fi
+          done < <(find "$APP/Contents/PlugIns" -type f -print0)
+
+      - name: Audit architecture runtime libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STAGE="macos-${{ matrix.arch }}"
+          REPORT="$STAGE/runtime-libraries-${{ matrix.arch }}.txt"
+          : > "$REPORT"
+
+          while IFS= read -r -d '' candidate; do
+            if file "$candidate" | grep -q "Mach-O"; then
+              {
+                echo "===== $candidate ====="
+                otool -L "$candidate"
+                echo
+              } >> "$REPORT"
+            fi
+          done < <(find "$STAGE" -type f -print0)
+
+          cat "$REPORT"
+
+          if grep -E \
+            '/opt/homebrew|/usr/local/(Cellar|opt)' \
+            "$REPORT"
+          then
+            echo "::error::Unbundled Homebrew dependency remains."
+            exit 1
+          fi
+
+      - name: Archive architecture package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STAGE="macos-${{ matrix.arch }}"
+
+          ditto -c -k \
+            --sequesterRsrc \
+            --keepParent \
+            "$STAGE" \
+            "$STAGE.zip"
+
+      - name: Upload architecture build
+        uses: actions/upload-artifact@v5
+        with:
+          name: fibercoin-macos-${{ matrix.arch }}
+          path: macos-${{ matrix.arch }}.zip
+          if-no-files-found: error
+
+  universal:
+    name: Create portable unsigned universal package
+    needs: build
+    runs-on: macos-15
+
+    steps:
+      - name: Download arm64 package
+        uses: actions/download-artifact@v5
+        with:
+          name: fibercoin-macos-arm64
+          path: architecture/arm64
+
+      - name: Download x86_64 package
+        uses: actions/download-artifact@v5
+        with:
+          name: fibercoin-macos-x86_64
+          path: architecture/x86_64
+
+      - name: Extract architecture packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p extracted/arm64 extracted/x86_64
+
+          ditto -x -k \
+            architecture/arm64/macos-arm64.zip \
+            extracted/arm64
+
+          ditto -x -k \
+            architecture/x86_64/macos-x86_64.zip \
+            extracted/x86_64
+
+          test -d extracted/arm64/macos-arm64
+          test -d extracted/x86_64/macos-x86_64
+
+      - name: Merge universal package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ARM_ROOT="extracted/arm64/macos-arm64"
+          X86_ROOT="extracted/x86_64/macos-x86_64"
+          PACKAGE="Fibercoin-macOS-universal"
+
+          ditto "$ARM_ROOT" "$PACKAGE"
+
+          rsync -a \
+            --ignore-existing \
+            "$X86_ROOT/" \
+            "$PACKAGE/"
+
+          while IFS= read -r -d '' arm_file; do
+            relative="${arm_file#"$ARM_ROOT"/}"
+            x86_file="$X86_ROOT/$relative"
+            output="$PACKAGE/$relative"
+
+            test -f "$x86_file" || continue
+
+            if file "$arm_file" | grep -q "Mach-O" &&
+               file "$x86_file" | grep -q "Mach-O"
+            then
+              temporary="$output.universal"
+
+              lipo -create \
+                "$arm_file" \
+                "$x86_file" \
+                -output "$temporary"
+
+              chmod --reference="$output" "$temporary" 2>/dev/null || \
+                chmod +x "$temporary"
+
+              mv "$temporary" "$output"
+            fi
+          done < <(find "$ARM_ROOT" -type f -print0)
+
+      - name: Verify main universal binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-macOS-universal"
+
+          binaries=(
+            "$PACKAGE/bin/fibercoind"
+            "$PACKAGE/bin/fibercoin-cli"
+            "$PACKAGE/bin/fibercoin-tx"
+            "$PACKAGE/Fibercoin-Qt.app/Contents/MacOS/fibercoin-qt"
+          )
+
+          for binary in "${binaries[@]}"; do
+            test -x "$binary"
+            file "$binary"
+            lipo -info "$binary"
+
+            architectures="$(lipo -archs "$binary")"
+            grep -qw arm64 <<< "$architectures"
+            grep -qw x86_64 <<< "$architectures"
+          done
+
+      - name: Audit complete universal package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-macOS-universal"
+          REPORT="$PACKAGE/runtime-libraries.txt"
+          : > "$REPORT"
+
+          while IFS= read -r -d '' candidate; do
+            if file "$candidate" | grep -q "Mach-O"; then
+              {
+                echo "===== $candidate ====="
+                file "$candidate"
+                otool -L "$candidate"
+                echo
+              } >> "$REPORT"
+            fi
+          done < <(find "$PACKAGE" -type f -print0)
+
+          cat "$REPORT"
+
+          if grep -E \
+            '/opt/homebrew|/usr/local/(Cellar|opt)' \
+            "$REPORT"
+          then
+            echo "::error::Universal package still references Homebrew."
+            exit 1
+          fi
+
+      - name: Apply ad-hoc signatures
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-macOS-universal"
+          APP="$PACKAGE/Fibercoin-Qt.app"
+
+          # Sign standalone command-line binaries.
+          for binary in \
+            "$PACKAGE/bin/fibercoind" \
+            "$PACKAGE/bin/fibercoin-cli" \
+            "$PACKAGE/bin/fibercoin-tx"
+          do
+            codesign \
+              --force \
+              --sign - \
+              --timestamp=none \
+              "$binary"
+          done
+
+          # Sign nested frameworks and plugins with the application.
+          codesign \
+            --force \
+            --deep \
+            --sign - \
+            --timestamp=none \
+            "$APP"
+
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
+      - name: Test command-line binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-macOS-universal"
+
+          test_command() {
+            binary="$1"
+            argument="$2"
+            expected="$3"
+            status=0
+
+            if output=$("$binary" "$argument" 2>&1); then
+              status=0
+            else
+              status=$?
+            fi
+
+            echo "$output"
+
+            # Legacy binaries may return 1 after displaying information.
+            if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then
+              echo "::error::$binary exited with status $status"
+              return "$status"
+            fi
+
+            if ! grep -Eqi "$expected" <<< "$output"; then
+              echo "::error::$binary did not produce expected output"
+              return 1
+            fi
+          }
+
+          test_command \
+            "$PACKAGE/bin/fibercoind" \
+            "--version" \
+            "version"
+
+          test_command \
+            "$PACKAGE/bin/fibercoin-cli" \
+            "--version" \
+            "version"
+
+          test_command \
+            "$PACKAGE/bin/fibercoin-tx" \
+            "-?" \
+            "usage|fibercoin-tx"
+
+          test_command \
+            "$PACKAGE/Fibercoin-Qt.app/Contents/MacOS/fibercoin-qt" \
+            "--version" \
+            "version"
+
+      - name: Create final ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-macOS-universal"
+          ZIP="Fibercoin-2.0.2.4-macOS-universal-unsigned.zip"
+
+          ditto -c -k \
+            --sequesterRsrc \
+            --keepParent \
+            "$PACKAGE" \
+            "$ZIP"
+
+          shasum -a 256 "$ZIP" > "$ZIP.sha256"
+          cat "$ZIP.sha256"
+
+      - name: Upload portable universal package
+        uses: actions/upload-artifact@v5
+        with:
+          name: fibercoin-macOS-universal-unsigned
+          path: |
+            Fibercoin-2.0.2.4-macOS-universal-unsigned.zip
+            Fibercoin-2.0.2.4-macOS-universal-unsigned.zip.sha256
+            Fibercoin-macOS-universal/runtime-libraries.txt
+          if-no-files-found: error
