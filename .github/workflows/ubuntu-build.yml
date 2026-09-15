@@ -99,7 +99,11 @@ jobs:
           make install
 
       - name: Generate build system
-        run: ./autogen.sh
+        shell: bash
+        run: |
+          mkdir -p diagnostics
+          set -o pipefail
+          ./autogen.sh 2>&1 | tee diagnostics/autogen.log
 
       - name: Configure
         shell: bash
@@ -113,21 +117,50 @@ jobs:
           ./configure \
             --disable-tests \
             --with-gui=qt5 \
-            --with-miniupnpc
+            --with-miniupnpc \
+            2>&1 | tee diagnostics/configure.log
 
       - name: Compile
         shell: bash
         run: |
           set -o pipefail
-          make -j"$(nproc)" V=1 2>&1 | tee ubuntu-24.04-build.log
+          make -j"$(nproc)" V=1 2>&1 | tee diagnostics/build.log
+
+      - name: Collect diagnostics
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p diagnostics
+
+          cp config.log diagnostics/config.log 2>/dev/null || true
+
+          {
+            echo "===== SYSTEM ====="
+            uname -a
+            echo
+            echo "===== GCC ====="
+            gcc --version
+            echo
+            echo "===== G++ ====="
+            g++ --version
+            echo
+            echo "===== WORKTREE ====="
+            git status --short
+            echo
+            echo "===== DISK ====="
+            df -h
+            echo
+            echo "===== MEMORY ====="
+            free -h
+          } > diagnostics/environment.txt 2>&1 || true
 
       - name: Upload build diagnostics
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: fibercoin-ubuntu-24.04-diagnostics
-          path: ubuntu-24.04-build.log
-          if-no-files-found: error
+          path: diagnostics/
+          if-no-files-found: warn
 
       - name: Create Ubuntu package
         shell: bash
