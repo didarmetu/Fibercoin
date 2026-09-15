@@ -494,17 +494,120 @@ boost::filesystem::path GetMasternodeConfigFile()
     return pathConfigFile;
 }
 
+static const char* DEFAULT_CONFIG =
+R"(# ============================================================
+# Fibercoin Normal Desktop / Laptop Wallet
+# ============================================================
+
+# ------------------------------------------------------------
+# GENERAL NODE SETTINGS
+# ------------------------------------------------------------
+
+listen=1
+logtimestamps=1
+maxconnections=125
+
+# ------------------------------------------------------------
+# NETWORK SETTINGS
+# ------------------------------------------------------------
+
+# Fibercoin mainnet P2P port:
+# 30114
+
+# ------------------------------------------------------------
+# KNOWN FIBERCOIN PEERS
+# ------------------------------------------------------------
+
+# Primary DNS-named Fibercoin node
+addnode=seed.fibercoin.info:30114
+
+addnode=38.242.142.211:30114
+addnode=207.180.217.38:30114
+addnode=89.116.28.74:30114
+addnode=137.184.98.124:30114
+addnode=165.22.11.236:30114
+addnode=193.176.79.83:30114
+
+# Additional manually configured peers can be added below:
+#addnode=HOST_OR_IP:30114
+
+# ------------------------------------------------------------
+# MASTERNODE / SERVER SETTINGS
+# Normal desktop wallets do not need these.
+# ------------------------------------------------------------
+
+#daemon=1
+#server=1
+#txindex=1
+#masternode=1
+
+# Public masternode address:
+#externalip=YOUR_MASTERNODE_IP:30114
+
+# Masternode private key:
+#masternodeprivkey=YOUR_MASTERNODE_PRIVATE_KEY
+
+# ------------------------------------------------------------
+# RPC SETTINGS
+# ------------------------------------------------------------
+
+#rpcuser=FibercoinRPC
+#rpcpassword=YOUR_STRONG_RPC_PASSWORD
+#rpcport=33114
+#rpcbind=127.0.0.1
+#rpcallowip=127.0.0.1
+
+# ------------------------------------------------------------
+# OPTIONAL SETTINGS
+# ------------------------------------------------------------
+
+#detachdb=1
+#debug=1
+#debug=net
+)";
+
+static void CreateDefaultConfigFileIfNeeded(
+    const boost::filesystem::path& pathConfigFile)
+{
+    bool fCreateDefault = !boost::filesystem::exists(pathConfigFile);
+
+    if (!fCreateDefault) {
+        try {
+            fCreateDefault =
+                boost::filesystem::is_regular_file(pathConfigFile) &&
+                boost::filesystem::file_size(pathConfigFile) == 0;
+        } catch (const boost::filesystem::filesystem_error&) {
+            return;
+        }
+    }
+
+    if (!fCreateDefault)
+        return;
+
+    FILE* configFile = fopen(pathConfigFile.string().c_str(), "w");
+    if (configFile == NULL)
+        return;
+
+    const int result = fputs(DEFAULT_CONFIG, configFile);
+    fclose(configFile);
+
+    if (result >= 0) {
+        LogPrintf(
+            "Created default configuration file %s\n",
+            pathConfigFile.string());
+    }
+}
+
 void ReadConfigFile(map<string, string>& mapSettingsRet,
     map<string, vector<string> >& mapMultiSettingsRet)
 {
-    boost::filesystem::ifstream streamConfig(GetConfigFile());
-    if (!streamConfig.good()) {
-        // Create empty fibercoin.conf if it does not exist
-        FILE* configFile = fopen(GetConfigFile().string().c_str(), "a");
-        if (configFile != NULL)
-            fclose(configFile);
-        return; // Nothing to read, so just return
-    }
+    const boost::filesystem::path pathConfigFile = GetConfigFile();
+
+    CreateDefaultConfigFileIfNeeded(pathConfigFile);
+
+    boost::filesystem::ifstream streamConfig(pathConfigFile);
+    if (!streamConfig.good())
+        return;
 
     set<string> setOptions;
     setOptions.insert("*");
