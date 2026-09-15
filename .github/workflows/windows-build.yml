@@ -1,0 +1,161 @@
+name: Windows 11 x86-64 Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - upgrade/build-modernization
+    paths:
+      - ".github/workflows/windows-build.yml"
+      - "configure.ac"
+      - "build-aux/**"
+      - "depends/**"
+      - "src/**"
+
+jobs:
+  build:
+    name: Build Windows 11 x86-64
+    runs-on: ubuntu-22.04
+
+    env:
+      HOST: x86_64-w64-mingw32
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Install cross-compiler tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libtool \
+            autotools-dev \
+            automake \
+            autoconf \
+            pkg-config \
+            curl \
+            git \
+            file \
+            zip \
+            python3 \
+            cmake \
+            bison \
+            g++-mingw-w64-x86-64-posix \
+            nsis
+
+      - name: Show build environment
+        run: |
+          uname -a
+          x86_64-w64-mingw32-gcc --version
+          x86_64-w64-mingw32-g++ --version
+          make --version
+
+      - name: Build Windows dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          make \
+            -C depends \
+            HOST="$HOST" \
+            -j"$(nproc)"
+
+      - name: Generate build system
+        run: ./autogen.sh
+
+      - name: Configure Windows build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CONFIG_SITE="$PWD/depends/$HOST/share/config.site" \
+            ./configure \
+              --prefix=/ \
+              --disable-tests
+
+      - name: Compile Windows executables
+        shell: bash
+        run: |
+          set -o pipefail
+
+          make -j"$(nproc)" V=1 2>&1 \
+            | tee windows-11-x86_64-build.log
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: fibercoin-windows-11-x86_64-diagnostics
+          path: windows-11-x86_64-build.log
+          if-no-files-found: error
+
+      - name: Collect Windows package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-2.0.2.4-Windows-11-x86_64"
+
+          mkdir -p "$PACKAGE"
+
+          cp src/fibercoind.exe "$PACKAGE/"
+          cp src/fibercoin-cli.exe "$PACKAGE/"
+          cp src/fibercoin-tx.exe "$PACKAGE/"
+          cp src/qt/fibercoin-qt.exe "$PACKAGE/"
+
+          "$HOST-strip" --strip-unneeded \
+            "$PACKAGE/fibercoind.exe" \
+            "$PACKAGE/fibercoin-cli.exe" \
+            "$PACKAGE/fibercoin-tx.exe" \
+            "$PACKAGE/fibercoin-qt.exe"
+
+          cp doc/README_windows.txt \
+            "$PACKAGE/README.txt"
+
+      - name: Verify Windows executables
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-2.0.2.4-Windows-11-x86_64"
+          REPORT="$PACKAGE/windows-binaries.txt"
+          : > "$REPORT"
+
+          for binary in "$PACKAGE"/*.exe; do
+            {
+              echo "===== $binary ====="
+              file "$binary"
+              "$HOST-objdump" -p "$binary" \
+                | sed -n '/DLL Name:/p'
+              echo
+            } >> "$REPORT"
+
+            file "$binary" \
+              | grep -q "PE32+ executable.*x86-64"
+          done
+
+          cat "$REPORT"
+
+      - name: Create archive and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE="Fibercoin-2.0.2.4-Windows-11-x86_64"
+          ARCHIVE="$PACKAGE.zip"
+
+          zip -r -9 "$ARCHIVE" "$PACKAGE"
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+
+          cat "$ARCHIVE.sha256"
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v5
+        with:
+          name: fibercoin-Windows-11-x86_64
+          path: |
+            Fibercoin-2.0.2.4-Windows-11-x86_64.zip
+            Fibercoin-2.0.2.4-Windows-11-x86_64.zip.sha256
+            Fibercoin-2.0.2.4-Windows-11-x86_64/windows-binaries.txt
+          if-no-files-found: error
