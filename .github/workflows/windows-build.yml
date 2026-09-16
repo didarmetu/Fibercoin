@@ -5,12 +5,6 @@ on:
   push:
     branches:
       - upgrade/build-modernization
-    paths:
-      - ".github/workflows/windows-build.yml"
-      - "configure.ac"
-      - "build-aux/**"
-      - "depends/**"
-      - "src/**"
 
 jobs:
   build:
