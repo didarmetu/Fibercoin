@@ -3348,7 +3348,7 @@ Favor verificar o endereço e tente novamente.</translation>
     </message>
     <message>
         <source>Copyright (C) 2019-%i The Fibercoin Developers</source>
-        <translation>Todos os direitos reservados (C) 2017-%i aos Desenvolvedores do Fibercoin</translation>
+        <translation>Todos os direitos reservados (C) 2019-%i aos Desenvolvedores do Fibercoin</translation>
     </message>
     <message>
         <source>Corrupted block database detected</source>

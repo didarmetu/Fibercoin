@@ -89,7 +89,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          PACKAGE="Fibercoin-2.0.2.4-Windows-11-x86_64"
+          PACKAGE="Fibercoin-2.0.2.6-Windows-11-x86_64"
 
           mkdir -p "$PACKAGE"
 
@@ -112,7 +112,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          PACKAGE="Fibercoin-2.0.2.4-Windows-11-x86_64"
+          PACKAGE="Fibercoin-2.0.2.6-Windows-11-x86_64"
           REPORT="$PACKAGE/windows-binaries.txt"
           : > "$REPORT"
 
@@ -136,7 +136,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          PACKAGE="Fibercoin-2.0.2.4-Windows-11-x86_64"
+          PACKAGE="Fibercoin-2.0.2.6-Windows-11-x86_64"
           ARCHIVE="$PACKAGE.zip"
 
           zip -r -9 "$ARCHIVE" "$PACKAGE"
@@ -149,7 +149,7 @@ jobs:
         with:
           name: fibercoin-Windows-11-x86_64
           path: |
-            Fibercoin-2.0.2.4-Windows-11-x86_64.zip
-            Fibercoin-2.0.2.4-Windows-11-x86_64.zip.sha256
-            Fibercoin-2.0.2.4-Windows-11-x86_64/windows-binaries.txt
+            Fibercoin-2.0.2.6-Windows-11-x86_64.zip
+            Fibercoin-2.0.2.6-Windows-11-x86_64.zip.sha256
+            Fibercoin-2.0.2.6-Windows-11-x86_64/windows-binaries.txt
           if-no-files-found: error

@@ -199,9 +199,9 @@ jobs:
           plutil -insert CFBundlePackageType \
             -string "APPL" "$PLIST"
           plutil -insert CFBundleVersion \
-            -string "2.0.2.4" "$PLIST"
+            -string "2.0.2.6" "$PLIST"
           plutil -insert CFBundleShortVersionString \
-            -string "2.0.2.4" "$PLIST"
+            -string "2.0.2.6" "$PLIST"
           plutil -insert LSMinimumSystemVersion \
             -string "15.0" "$PLIST"
           plutil -insert NSHighResolutionCapable \
@@ -518,7 +518,7 @@ jobs:
           set -euo pipefail
 
           PACKAGE="Fibercoin-macOS-universal"
-          ZIP="Fibercoin-2.0.2.4-macOS-universal-unsigned.zip"
+          ZIP="Fibercoin-2.0.2.6-macOS-universal-unsigned.zip"
 
           ditto -c -k \
             --sequesterRsrc \
@@ -534,7 +534,7 @@ jobs:
         with:
           name: fibercoin-macOS-universal-unsigned
           path: |
-            Fibercoin-2.0.2.4-macOS-universal-unsigned.zip
-            Fibercoin-2.0.2.4-macOS-universal-unsigned.zip.sha256
+            Fibercoin-2.0.2.6-macOS-universal-unsigned.zip
+            Fibercoin-2.0.2.6-macOS-universal-unsigned.zip.sha256
             Fibercoin-macOS-universal/runtime-libraries.txt
           if-no-files-found: error

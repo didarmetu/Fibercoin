@@ -167,7 +167,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          PACKAGE="Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64"
+          PACKAGE="Fibercoin-2.0.2.6-Ubuntu-24.04-x86_64"
 
           mkdir -p "$PACKAGE/bin"
 
@@ -193,7 +193,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          PACKAGE="Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64"
+          PACKAGE="Fibercoin-2.0.2.6-Ubuntu-24.04-x86_64"
           REPORT="$PACKAGE/runtime-libraries.txt"
           : > "$REPORT"
 
@@ -223,7 +223,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          PACKAGE="Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64"
+          PACKAGE="Fibercoin-2.0.2.6-Ubuntu-24.04-x86_64"
 
           test_command() {
             binary="$1"
@@ -253,12 +253,12 @@ jobs:
           test_command \
             "$PACKAGE/bin/fibercoind" \
             "--version" \
-            "2.0.2.4"
+            "2.0.2.6"
 
           test_command \
             "$PACKAGE/bin/fibercoin-cli" \
             "--version" \
-            "2.0.2.4"
+            "2.0.2.6"
 
           test_command \
             "$PACKAGE/bin/fibercoin-tx" \
@@ -269,14 +269,14 @@ jobs:
           test_command \
             "$PACKAGE/fibercoin-qt" \
             "--version" \
-            "2.0.2.4"
+            "2.0.2.6"
 
       - name: Create archive and checksum
         shell: bash
         run: |
           set -euo pipefail
 
-          PACKAGE="Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64"
+          PACKAGE="Fibercoin-2.0.2.6-Ubuntu-24.04-x86_64"
           ARCHIVE="$PACKAGE.tar.gz"
 
           tar -czf "$ARCHIVE" "$PACKAGE"
@@ -289,7 +289,7 @@ jobs:
         with:
           name: fibercoin-Ubuntu-24.04-x86_64
           path: |
-            Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64.tar.gz
-            Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64.tar.gz.sha256
-            Fibercoin-2.0.2.4-Ubuntu-24.04-x86_64/runtime-libraries.txt
+            Fibercoin-2.0.2.6-Ubuntu-24.04-x86_64.tar.gz
+            Fibercoin-2.0.2.6-Ubuntu-24.04-x86_64.tar.gz.sha256
+            Fibercoin-2.0.2.6-Ubuntu-24.04-x86_64/runtime-libraries.txt
           if-no-files-found: error
