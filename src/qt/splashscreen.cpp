@@ -122,8 +122,8 @@ void SplashScreen::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);
 
-    const int paddingLeft = 23;
-    const int paddingTop = 580;
+    const int paddingLeft = 14;
+    const int paddingTop = 400;
     const int titleVersionVSpace = 17;
     const int titleCopyrightVSpace = 32;
 
