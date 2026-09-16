@@ -66,4 +66,105 @@ BOOST_AUTO_TEST_CASE(May15)
     SetMockTime(0);
 }
 
+
+BOOST_AUTO_TEST_CASE(block_prev_index_active_tip)
+{
+    CBlockIndex parent;
+    parent.nHeight = 760700;
+
+    CBlockHeader header;
+    header.nVersion = 1;
+    header.nTime = 1;
+    header.nBits = 1;
+    header.nNonce = 1;
+
+    parent.phashBlock = new uint256(header.GetHash());
+
+    CBlockIndex* originalTip = chainActive.Tip();
+    chainActive.SetTip(&parent);
+
+    CBlock block;
+    block.hashPrevBlock = parent.GetBlockHash();
+
+    CBlockIndex* result = GetBlockPrevIndex(block);
+
+    BOOST_REQUIRE(result != NULL);
+    BOOST_CHECK(result == &parent);
+    BOOST_CHECK_EQUAL(result->nHeight, 760700);
+
+    chainActive.SetTip(originalTip);
+
+    delete parent.phashBlock;
+    parent.phashBlock = NULL;
+}
+
+BOOST_AUTO_TEST_CASE(block_prev_index_side_chain)
+{
+    CBlockIndex activeTip;
+    activeTip.nHeight = 760750;
+
+    CBlockHeader activeHeader;
+    activeHeader.nVersion = 1;
+    activeHeader.nTime = 10;
+    activeHeader.nBits = 1;
+    activeHeader.nNonce = 10;
+
+    activeTip.phashBlock = new uint256(activeHeader.GetHash());
+
+    CBlockIndex sideParent;
+    sideParent.nHeight = 760700;
+
+    CBlockHeader sideHeader;
+    sideHeader.nVersion = 1;
+    sideHeader.nTime = 20;
+    sideHeader.nBits = 1;
+    sideHeader.nNonce = 20;
+
+    sideParent.phashBlock = new uint256(sideHeader.GetHash());
+
+    CBlockIndex* originalTip = chainActive.Tip();
+    chainActive.SetTip(&activeTip);
+
+    mapBlockIndex[sideParent.GetBlockHash()] = &sideParent;
+
+    CBlock block;
+    block.hashPrevBlock = sideParent.GetBlockHash();
+
+    CBlockIndex* result = GetBlockPrevIndex(block);
+
+    BOOST_REQUIRE(result != NULL);
+    BOOST_CHECK(result == &sideParent);
+    BOOST_CHECK(result != chainActive.Tip());
+    BOOST_CHECK_EQUAL(result->nHeight, 760700);
+
+    mapBlockIndex.erase(sideParent.GetBlockHash());
+    chainActive.SetTip(originalTip);
+
+    delete activeTip.phashBlock;
+    activeTip.phashBlock = NULL;
+
+    delete sideParent.phashBlock;
+    sideParent.phashBlock = NULL;
+}
+
+BOOST_AUTO_TEST_CASE(block_prev_index_unknown_parent)
+{
+    CBlock block;
+    block.hashPrevBlock =
+        uint256S("0000000000000000000000000000000000000000000000000000000012345678");
+
+    BlockMap::iterator existing = mapBlockIndex.find(block.hashPrevBlock);
+    CBlockIndex* previous = NULL;
+
+    if (existing != mapBlockIndex.end()) {
+        previous = existing->second;
+        mapBlockIndex.erase(existing);
+    }
+
+    BOOST_CHECK(GetBlockPrevIndex(block) == NULL);
+
+    if (previous != NULL)
+        mapBlockIndex[block.hashPrevBlock] = previous;
+}
+
 BOOST_AUTO_TEST_SUITE_END()

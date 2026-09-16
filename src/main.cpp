@@ -3106,6 +3106,23 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     return true;
 }
 
+CBlockIndex* GetBlockPrevIndex(const CBlock& block)
+{
+    CBlockIndex* pindexTip = chainActive.Tip();
+
+    if (pindexTip != NULL &&
+        pindexTip->GetBlockHash() == block.hashPrevBlock) {
+        return pindexTip;
+    }
+
+    BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
+
+    if (mi != mapBlockIndex.end())
+        return mi->second;
+
+    return NULL;
+}
+
 bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig)
 {
     // These are checks that are independent of context.
@@ -3192,16 +3209,10 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
     }
 
     // masternode payments / budgets
-    CBlockIndex* pindexPrev = chainActive.Tip();
+    CBlockIndex* pindexPrev = GetBlockPrevIndex(block);
     int nHeight = 0;
     if (pindexPrev != NULL) {
-        if (pindexPrev->GetBlockHash() == block.hashPrevBlock) {
-            nHeight = pindexPrev->nHeight + 1;
-        } else { //out of order
-            BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
-            if (mi != mapBlockIndex.end() && (*mi).second)
-                nHeight = (*mi).second->nHeight + 1;
-        }
+        nHeight = pindexPrev->nHeight + 1;
 
         // FBC
         // It is entierly possible that we don't have enough data and this could fail
