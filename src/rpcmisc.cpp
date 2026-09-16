@@ -261,6 +261,13 @@ UniValue spork(const UniValue& params, bool fHelp)
             return "Invalid spork name";
         }
 
+        // Deprecated sporks remain reserved for protocol compatibility.
+        if (IsDeprecatedSpork(nSporkID)) {
+            return strprintf(
+                "%s is deprecated in Fibercoin v2.0.2.6 and cannot be updated.",
+                sporkManager.GetSporkNameByID(nSporkID));
+        }
+
         // SPORK VALUE
         int64_t nValue = params[1].get_int();
 

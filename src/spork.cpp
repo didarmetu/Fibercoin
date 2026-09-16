@@ -110,9 +110,20 @@ void ProcessSpork(CNode* pfrom, std::string& strCommand, CDataStream& vRecv)
 }
 
 
+bool IsDeprecatedSpork(int nSporkID)
+{
+    return nSporkID == SPORK_7_MASTERNODE_SCANNING ||
+           nSporkID == SPORK_11_RESET_BUDGET ||
+           nSporkID == SPORK_12_RECONSIDER_BLOCKS;
+}
+
 // grab the value of the spork on the network, or the default
 int64_t GetSporkValue(int nSporkID)
 {
+    // Deprecated as of Fibercoin v2.0.2.6.
+    // Keep the IDs reserved, but always expose them as OFF.
+    if (IsDeprecatedSpork(nSporkID))
+        return 4070908800;
     int64_t r = -1;
 
     if (mapSporksActive.count(nSporkID)) {
@@ -141,6 +152,10 @@ int64_t GetSporkValue(int nSporkID)
 // grab the spork value, and see if it's off
 bool IsSporkActive(int nSporkID)
 {
+    // Deprecated sporks are permanently inactive as of Fibercoin v2.0.2.6.
+    if (IsDeprecatedSpork(nSporkID))
+        return false;
+
     int64_t r = GetSporkValue(nSporkID);
     if (r == -1) return false;
     return r < GetTime();
@@ -218,6 +233,13 @@ bool CSporkManager::Sign(CSporkMessage& spork)
 
 bool CSporkManager::UpdateSpork(int nSporkID, int64_t nValue)
 {
+    if (IsDeprecatedSpork(nSporkID)) {
+        LogPrintf(
+            "CSporkManager::UpdateSpork - Refusing update for deprecated spork %s (%d)\n",
+            GetSporkNameByID(nSporkID),
+            nSporkID);
+        return false;
+    }
     CSporkMessage msg;
     msg.nSporkID = nSporkID;
     msg.nValue = nValue;
