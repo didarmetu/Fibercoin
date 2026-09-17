@@ -1,6 +1,6 @@
 // Copyright (c) 2012-2014 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING.
 
 #include "clientversion.h"
 
@@ -89,6 +89,36 @@ static std::string FormatVersion(int nVersion)
 std::string FormatFullVersion()
 {
     return CLIENT_BUILD;
+}
+
+std::string FormatBuildArchitecture()
+{
+#if defined(__x86_64__) || defined(_M_X64)
+    return "x86_64";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    return "arm64";
+#elif defined(__i386__) || defined(_M_IX86)
+    return "x86";
+#elif defined(__arm__) || defined(_M_ARM)
+    return "arm";
+#else
+    return "unknown";
+#endif
+}
+
+std::string FormatGuiVersion()
+{
+    const char* buildType =
+        CLIENT_VERSION_IS_RELEASE ? "Official Build" : "Development Build";
+
+    return strprintf(
+        "Fibercoin Core v%d.%d.%d.%d (%s) (%s)",
+        CLIENT_VERSION_MAJOR,
+        CLIENT_VERSION_MINOR,
+        CLIENT_VERSION_REVISION,
+        CLIENT_VERSION_BUILD,
+        buildType,
+        FormatBuildArchitecture());
 }
 
 /**

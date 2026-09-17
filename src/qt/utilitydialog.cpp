@@ -2,7 +2,7 @@
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING.
 
 #include "utilitydialog.h"
 
@@ -46,6 +46,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about) : QDialog(pare
 
     if (about) {
         setWindowTitle(tr("About Fibercoin"));
+        const QString guiVersion = QString::fromStdString(FormatGuiVersion());
 
         /// HTML-format the license message from the core
         QString licenseInfo = QString::fromStdString(LicenseInfo());
@@ -60,8 +61,8 @@ HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about) : QDialog(pare
 
         ui->aboutMessage->setTextFormat(Qt::RichText);
         ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        text = version + "\n" + licenseInfo;
-        ui->aboutMessage->setText(version + "<br><br>" + licenseInfoHTML);
+        text = guiVersion + "\n" + licenseInfo;
+        ui->aboutMessage->setText(guiVersion + "<br><br>" + licenseInfoHTML);
         ui->aboutMessage->setWordWrap(true);
         ui->helpMessage->setVisible(false);
     } else {

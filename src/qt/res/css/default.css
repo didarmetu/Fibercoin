@@ -620,7 +620,7 @@ QDialog .QTabWidget QTabBar::tab:last {
 }
 
 QDialog .QTabWidget QTabBar::tab:selected, QDialog .QTabWidget QTabBar::tab:hover {
-	background-color:#ffffff;
+	background-color: rgba(255, 255, 255, 150);
 	color:#333;
 }
 
@@ -835,7 +835,7 @@ QFrame[frameShape="4"] { /* QFrame::HLine == 0x0004 */
 QLabel#labelOverviewHeaderLeft {
 	font-weight:bold;
 	font-size:20px;
-	background-color:#ffffff;
+	background-color: rgba(255, 255, 255, 150);
 	padding-left:20px;
 }
 
@@ -848,6 +848,21 @@ QLabel#labelOverviewHeaderRight {
 QWidget .QFrame#frame_Header { /* Header with Page-Title and PIVX-image */
 	min-width:400px;
 	background-color:#ffffff;
+}
+
+/* Rounded headers for primary wallet pages */
+QWidget#OverviewPage QFrame#frame_Header,
+QDialog#SendCoinsDialog QFrame#frame_Header,
+QWidget#MasternodeList QFrame#frame_Header {
+    border: 1px solid rgba(0, 0, 0, 25);
+    border-radius: 6px;
+}
+
+/* Let the rounded parent header show through */
+QWidget#OverviewPage QLabel#labelOverviewHeaderLeft,
+QDialog#SendCoinsDialog QLabel#labelOverviewHeaderLeft,
+QWidget#MasternodeList QLabel#labelOverviewHeaderLeft {
+    background-color: transparent;
 }
 
 QWidget .QFrame#frame_BG { /* Background */
@@ -969,7 +984,6 @@ QWidget .QFrame#frame_RecentTransactions .QLabel#labelTransactionsStatus { /* Re
 QWidget .QFrame#frame_RecentTransactions QListView { /* Transaction List */
 	font-weight:normal;
 	font-size:12px;
-	max-width:369px;
 	margin-top:12px;
 	margin-left:0px; /* CSS Voodoo - set to -66px to hide default transaction icons */
 }

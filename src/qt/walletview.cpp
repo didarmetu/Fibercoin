@@ -59,7 +59,15 @@ WalletView::WalletView(QWidget* parent) : QStackedWidget(parent),
     labelOverviewHeaderLeft->setObjectName(QStringLiteral("labelOverviewHeaderLeft"));
     labelOverviewHeaderLeft->setMinimumSize(QSize(464, 60));
     labelOverviewHeaderLeft->setMaximumSize(QSize(16777215, 60));
-    labelOverviewHeaderLeft->setText(tr("HISTORY"));
+    labelOverviewHeaderLeft->setText(tr("TRANSACTION HISTORY"));
+    frame_Header->setStyleSheet(
+        "QFrame#frame_Header {"
+        " background-color: rgba(255, 255, 255, 150);"
+        " border: 1px solid rgba(0, 0, 0, 25);"
+        " border-radius: 6px;"
+        " }");
+    labelOverviewHeaderLeft->setStyleSheet(
+        "QLabel#labelOverviewHeaderLeft { background-color: transparent; }");
     QFont fontHeaderLeft;
     fontHeaderLeft.setPointSize(20);
     fontHeaderLeft.setBold(true);

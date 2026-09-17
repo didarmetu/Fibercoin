@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING.
 
 #ifndef BITCOIN_CLIENTVERSION_H
 #define BITCOIN_CLIENTVERSION_H
@@ -63,6 +63,8 @@ extern const std::string CLIENT_DATE;
 
 
 std::string FormatFullVersion();
+std::string FormatBuildArchitecture();
+std::string FormatGuiVersion();
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments);
 
 #endif // WINDRES_PREPROC

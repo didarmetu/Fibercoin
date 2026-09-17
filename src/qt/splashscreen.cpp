@@ -25,10 +25,7 @@
 
 SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle* networkStyle) : QWidget(0, f), curAlignment(0)
 {
-    titleText =
-        QString("%1 %2")
-            .arg(tr("Fibercoin"))
-            .arg(QString::fromStdString(FormatFullVersion()));
+    titleText = QString::fromStdString(FormatGuiVersion());
     copyrightTextFBC =
         QChar(0xA9) + QString(" 2019-%1 ").arg(COPYRIGHT_YEAR) +
         QString(tr("The Fibercoin developers"));
@@ -115,7 +112,7 @@ void SplashScreen::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);
 
-    const int infoBottomMargin = 42;
+    const int infoBottomMargin = 24;
     const int infoLineSpacing = 18;
 
     float fontFactor = 1.0;
@@ -145,12 +142,12 @@ void SplashScreen::paintEvent(QPaintEvent* event)
     painter.drawText(
         QRect(0, copyrightY, width(), infoLineSpacing),
         Qt::AlignHCenter | Qt::AlignVCenter,
-        copyrightTextFBC);
+        lineageText);
 
     painter.drawText(
         QRect(0, lineageY, width(), infoLineSpacing),
         Qt::AlignHCenter | Qt::AlignVCenter,
-        lineageText);
+        copyrightTextFBC);
 
     if (!titleAddText.isEmpty()) {
         QFont boldFont(font, 10 * fontFactor);

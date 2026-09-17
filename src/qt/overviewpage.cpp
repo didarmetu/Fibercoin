@@ -135,7 +135,7 @@ OverviewPage::OverviewPage(QWidget* parent) : QWidget(parent),
     // Recent transactions
     ui->listTransactions->setItemDelegate(txdelegate);
     ui->listTransactions->setIconSize(QSize(DECORATION_SIZE, DECORATION_SIZE));
-    ui->listTransactions->setMinimumHeight(NUM_ITEMS * (DECORATION_SIZE + 2));
+    ui->listTransactions->setMinimumHeight(NUM_ITEMS * (DECORATION_SIZE + 6));
     ui->listTransactions->setAttribute(Qt::WA_MacShowFocusRect, false);
 
     connect(ui->listTransactions, SIGNAL(clicked(QModelIndex)), this, SLOT(handleTransactionClicked(QModelIndex)));

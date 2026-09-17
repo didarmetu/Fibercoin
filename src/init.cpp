@@ -519,23 +519,17 @@ std::string HelpMessage(HelpMessageMode mode)
 std::string LicenseInfo()
 {
     return FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
-           "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2014-%i The Dash Core Developers"), COPYRIGHT_YEAR)) + "\n" +
-           "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2015-%i The PIVX Core Developers"), COPYRIGHT_YEAR)) + "\n" +
-           "\n" +
            FormatParagraph(strprintf(_("Copyright (C) 2019-%i The Fibercoin Developers (Didarmetu)"), COPYRIGHT_YEAR)) + "\n" +
            "\n" +
-           FormatParagraph(_("This is experimental software. Distributed under the MIT software license, see the accompanying file COPYING or <http://www.opensource.org/licenses/mit-license.php>.")) + "\n" +
+           FormatParagraph(_("Fibercoin Core is distributed under the MIT software license. See the accompanying file COPYING for license information.")) + "\n" +
            "\n" +
-           FormatParagraph(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.")) +
+           FormatParagraph(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.")) + "\n" +
            "\n" +
-           FormatParagraph(_("Please contribute if you find Fibercoin Wallet useful. Visit <https://fibercoin.info/> for further information about the software.")) + "\n" +
-           "\n" +
-           FormatParagraph(_("The source code is available from <https://github.com/didarmetu/Fibercoin/>.")) +
-           "\n" +
-           FormatParagraph(_("For trading and exchanging Fibercoin, please visit the official Fibercoin Exchange at <https://fiberchange.com/>. The exchange provides a secure platform to trade Fibercoin and other supported cryptocurrencies.")) +
-           "\n";
+           FormatParagraph(_("Project website: <https://fibercoin.info/>")) + "\n" +
+           FormatParagraph(_("Source code: <https://github.com/didarmetu/Fibercoin/>")) + "\n" +
+           FormatParagraph(_("Fibercoin Exchange: <https://fiberchange.com/>")) + "\n";
 }
 
 static void BlockNotifyCallback(const uint256& hashNewTip)
