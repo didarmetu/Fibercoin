@@ -47,6 +47,28 @@
            </spacer>
           </item>
           <item>
+           <widget class="QLabel" name="labelOverviewHeaderLeft">
+            <property name="minimumSize">
+             <size>
+              <width>464</width>
+              <height>60</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>60</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>RECEIVE</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="labelOverviewHeaderRight">
             <property name="minimumSize">
              <size>

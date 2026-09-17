@@ -564,11 +564,23 @@ jobs:
           shasum -a 256 Fibercoin.dmg > Fibercoin.dmg.sha256
           cat Fibercoin.dmg.sha256
 
+      - name: Stage Fibercoin app artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf app-artifact
+          mkdir -p app-artifact
+
+          ditto             "Fibercoin-macOS-universal/Fibercoin.app"             "app-artifact/Fibercoin.app"
+
+          test -x "app-artifact/Fibercoin.app/Contents/MacOS/fibercoin-qt"
+
       - name: Upload Fibercoin app
         uses: actions/upload-artifact@v6
         with:
           name: Fibercoin.app
-          path: Fibercoin-macOS-universal/Fibercoin.app
+          path: app-artifact/
           if-no-files-found: error
 
       - name: Upload Fibercoin DMG

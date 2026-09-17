@@ -25,7 +25,13 @@
 
 SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle* networkStyle) : QWidget(0, f), curAlignment(0)
 {
-    titleText = QString::fromStdString(FormatGuiVersion());
+    titleText =
+        QString("Fibercoin Core v%1.%2.%3.%4 - %5")
+            .arg(CLIENT_VERSION_MAJOR)
+            .arg(CLIENT_VERSION_MINOR)
+            .arg(CLIENT_VERSION_REVISION)
+            .arg(CLIENT_VERSION_BUILD)
+            .arg(CLIENT_VERSION_IS_RELEASE ? tr("Official Build") : tr("Development Build"));
     copyrightTextFBC =
         QChar(0xA9) + QString(" 2019-%1 ").arg(COPYRIGHT_YEAR) +
         QString(tr("The Fibercoin developers"));

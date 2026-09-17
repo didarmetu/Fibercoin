@@ -94,6 +94,8 @@ WalletView::WalletView(QWidget* parent) : QStackedWidget(parent),
     verticalLayout_8->addLayout(horizontalLayout_Header);
 
     QVBoxLayout* vbox = new QVBoxLayout();
+    vbox->setContentsMargins(5, 5, 18, 15);
+    vbox->setSpacing(5);
     QHBoxLayout* hbox_buttons = new QHBoxLayout();
     vbox->addWidget(frame_Header);
 

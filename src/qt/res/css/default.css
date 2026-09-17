@@ -841,8 +841,7 @@ QLabel#labelOverviewHeaderLeft {
 
 QLabel#labelOverviewHeaderRight {
 	qproperty-alignment: 'AlignVCenter | AlignRight';
-	background-image: url(':/images/fibercoin_logo_horizontal');
-	background-repeat: no-repeat;
+	background-color: transparent;
 }
 
 QWidget .QFrame#frame_Header { /* Header with Page-Title and PIVX-image */
@@ -961,8 +960,10 @@ QWidget .QFrame#frameBalances .QLabel#labelWatchTotal { /* Watch-only Total Bala
 QWidget .QFrame#frame_RecentTransactions { /* Transactions Widget */
 	min-width:410px;
 	min-height:100px;
-	margin-left:0;
-	margin-top:0;
+	margin-left:5px;
+	margin-right:18px;
+	margin-top:5px;
+	margin-bottom:5px;
 }
 
 QWidget .QFrame#frame_RecentTransactions .QLabel#label_4 { /* Recent Transactions Label */
@@ -996,14 +997,17 @@ QDialog#SendCoinsDialog {
 
 QDialog#SendCoinsDialog .QFrame#frameCoinControl { /* Coin Control Section */
 	background-color:#ffffff;
+	border-radius:6px;
 }
 
-QDialog#SendCoinsDialog .QFrame#frameFee { /* Coin Control Section */
+QDialog#SendCoinsDialog .QFrame#frameFee { /* Transaction Fee Section */
 	background-color:#ffffff;
+	border-radius:6px;
 }
 
-QDialog#SendCoinsDialog .QFrame#frame_Send { /* Coin Control Section */
+QDialog#SendCoinsDialog .QFrame#frame_Send { /* Send Actions Section */
 	background-color:#ffffff;
+	border-radius:6px;
 	margin-bottom:6px;
 }
 
@@ -1045,6 +1049,7 @@ QDialog#SendCoinsDialog .QFrame#frameCoinControl .QLabel#labelCoinControlChangeL
 
 QDialog#SendCoinsDialog .QScrollArea#scrollArea .QWidget#scrollAreaWidgetContents { /* Send To Widget */
 	background-color:#ffffff;
+	border-radius:6px;
 }
 
 QDialog#SendCoinsDialog .QCheckBox#checkSwiftTX { /* SwiftTX Checkbox */
@@ -1252,15 +1257,15 @@ QDialog#CoinControlDialog .CoinControlTreeWidget#treeWidget::indicator { /* Coin
 /**************************** RECEIVE COINS *********************************************/
 
 QWidget#ReceiveCoinsDialog {
-	background-color:#fff;
+	background-color:transparent;
 }
 
 QWidget#ReceiveCoinsDialog .QFrame#frame {
-	background-color:#ffffff;
+	background-color:transparent;
 }
 
 QWidget#ReceiveCoinsDialog .QFrame#frame2 {
-	background-color:#ffffff;
+	background-color:transparent;
 }
 
 QWidget#ReceiveCoinsDialog .QFrame#frame2  > .QLabel { /* Receive Coin Labels */
