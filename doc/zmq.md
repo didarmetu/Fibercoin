@@ -1,108 +1,104 @@
-# Block and Transaction Broadcasting With ZeroMQ
+# Fibercoin ZeroMQ Notifications
 
-[ZeroMQ](http://zeromq.org/) is a lightweight wrapper around TCP
-connections, inter-process communication, and shared-memory,
-providing various message-oriented semantics such as publish/subscribe,
-request/reply, and push/pull.
+Fibercoin can publish block, transaction, and SwiftTX events through ZeroMQ.
 
-The Fibercoin daemon can be configured to act as a trusted "border
-router", implementing the fibercoin wire protocol and relay, making
-consensus decisions, maintaining the local blockchain database,
-broadcasting locally generated transactions into the network, and
-providing a queryable RPC interface to interact on a polled basis for
-requesting blockchain related data. However, there exists only a
-limited service to notify external software of events like the arrival
-of new blocks or transactions.
+This allows external software to subscribe to node events without repeatedly polling RPC.
 
-The ZeroMQ facility implements a notification interface through a set
-of specific notifiers. Currently there are notifiers that publish
-blocks and transactions. This read-only facility requires only the
-connection of a corresponding ZeroMQ subscriber port in receiving
-software; it is not authenticated nor is there any two-way protocol
-involvement. Therefore, subscribers should validate the received data
-since it may be out of date, incomplete or even invalid.
+ZeroMQ notifications are read-only and unauthenticated. Subscribers should validate received data and should only connect through trusted or firewall-protected endpoints.
 
-ZeroMQ sockets are self-connecting and self-healing; that is,
-connections made between two endpoints will be automatically restored
-after an outage, and either end may be freely started or stopped in
-any order.
+## Build support
 
-Because ZeroMQ is message oriented, subscribers receive transactions
-and blocks all-at-once and do not need to implement any sort of
-buffering or reassembly.
+Fibercoin requires ZeroMQ API version 4.x or newer.
 
-## Prerequisites
+On Linux, the development package is commonly named:
 
-The ZeroMQ feature in Fibercoin requires ZeroMQ API version 4.x or
-newer. Typically, it is packaged by distributions as something like
-*libzmq3-dev*. The C++ wrapper for ZeroMQ is *not* needed.
+    libzmq3-dev
 
-In order to run the example Python client scripts in contrib/ one must
-also install *python-zmq*, though this is not necessary for daemon
-operation.
+ZeroMQ support is enabled automatically when a compatible library is found.
 
-## Enabling
+To disable it when configuring Fibercoin:
 
-By default, the ZeroMQ feature is automatically compiled in if the
-necessary prerequisites are found.  To disable, use --disable-zmq
-during the *configure* step of building fibercoind:
+    ./configure --disable-zmq
 
-    $ ./configure --disable-zmq (other options)
+## Supported notifications
 
-To actually enable operation, one must set the appropriate options on
-the commandline or in the configuration file.
+Fibercoin currently supports:
 
-## Usage
+    -zmqpubhashblock=<address>
+    -zmqpubhashtx=<address>
+    -zmqpubhashtxlock=<address>
+    -zmqpubrawblock=<address>
+    -zmqpubrawtx=<address>
+    -zmqpubrawtxlock=<address>
 
-Currently, the following notifications are supported:
+The SwiftTX-specific notifications are:
 
-    -zmqpubhashtx=address
-    -zmqpubhashtxlock=address
-    -zmqpubhashblock=address
-    -zmqpubrawblock=address
-    -zmqpubrawtx=address
-    -zmqpubrawtxlock=address
+    -zmqpubhashtxlock=<address>
+    -zmqpubrawtxlock=<address>
 
-The socket type is PUB and the address must be a valid ZeroMQ socket
-address. The same address can be used in more than one notification.
+## Example
 
-For instance:
+Publish transaction hashes and raw transactions over TCP:
 
-    $ fibercoind -zmqpubhashtx=tcp://127.0.0.1:28332 \
-               -zmqpubrawtx=ipc:///tmp/fibercoind.tx.raw
+    fibercoind \
+      -zmqpubhashtx=tcp://127.0.0.1:28332 \
+      -zmqpubrawtx=tcp://127.0.0.1:28333
 
-Each PUB notification has a topic and body, where the header
-corresponds to the notification type. For instance, for the
-notification `-zmqpubhashtx` the topic is `hashtx` (no null
-terminator) and the body is the hexadecimal transaction hash (32
-bytes).
+The same options can be placed in `fibercoin.conf`.
 
-These options can also be provided in fibercoin.conf.
+Example:
 
-ZeroMQ endpoint specifiers for TCP (and others) are documented in the
-[ZeroMQ API](http://api.zeromq.org/4-0:_start).
+    zmqpubhashtx=tcp://127.0.0.1:28332
+    zmqpubrawtx=tcp://127.0.0.1:28333
 
-Client side, then, the ZeroMQ subscriber socket must have the
-ZMQ_SUBSCRIBE option set to one or either of these prefixes (for
-instance, just `hash`); without doing so will result in no messages
-arriving. Please see `contrib/zmq/zmq_sub.py` for a working example.
+## Message format
 
-## Remarks
+Each ZeroMQ notification is sent as three message parts:
 
-From the perspective of fibercoind, the ZeroMQ socket is write-only; PUB
-sockets don't even have a read function. Thus, there is no state
-introduced into fibercoind directly. Furthermore, no information is
-broadcast that wasn't already received from the public P2P network.
+1. topic
+2. payload
+3. 4-byte little-endian sequence number
 
-No authentication or authorization is done on connecting clients; it
-is assumed that the ZeroMQ port is exposed only to trusted entities,
-using other means such as firewalling.
+For example, `-zmqpubhashtx` uses the topic:
 
-Note that when the block chain tip changes, a reorganisation may occur
-and just the tip will be notified. It is up to the subscriber to
-retrieve the chain from the last known block to the new tip.
+    hashtx
 
-There are several possibilities that ZMQ notification can get lost
-during transmission depending on the communication type your are
-using. fibercoind appends an up-counting sequence number to each
-notification which allows listeners to detect lost notifications.
+and sends the 32-byte transaction hash as the payload.
+
+The sequence number increments for each published message and can be used by subscribers to detect missed notifications.
+
+## SwiftTX topics
+
+SwiftTX transaction-lock notifications use these topics:
+
+    hashtxlock
+    rawtxlock
+
+`hashtxlock` publishes the transaction hash.
+
+`rawtxlock` publishes the serialized transaction.
+
+## Subscriber behavior
+
+ZeroMQ PUB sockets do not provide authentication or request/response behavior.
+
+Subscribers should:
+
+- validate incoming block and transaction data
+- handle reconnects
+- detect gaps using the sequence number
+- retrieve missing blockchain data through RPC when necessary
+
+A subscriber must set a ZeroMQ subscription prefix before messages will be delivered.
+
+## Security
+
+Do not expose ZeroMQ endpoints directly to untrusted networks unless protected by firewalling or another trusted transport layer.
+
+Fibercoin does not authenticate ZeroMQ subscribers.
+
+## Example subscriber
+
+If available in the source tree, the example subscriber can be found at:
+
+    contrib/zmq/zmq_sub.py

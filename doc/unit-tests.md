@@ -1,18 +1,87 @@
-Compiling/running unit tests
-------------------------------------
+# Fibercoin Unit Tests
 
-Unit tests will be automatically compiled if dependencies were met in configure
-and tests weren't explicitly disabled.
+Fibercoin includes unit tests for core, wallet, networking, RPC, consensus, serialization, cryptography, and Qt functionality.
 
-After configuring, they can be run with 'make check'.
+Tests are compiled by default when the required dependencies are available.
 
-To run the fibercoind tests manually, launch src/test/test_fibercoin .
+## Build and run the test suite
 
-To add more fibercoind tests, add `BOOST_AUTO_TEST_CASE` functions to the existing
-.cpp files in the test/ directory or add new .cpp files that
-implement new BOOST_AUTO_TEST_SUITE sections.
+After configuring Fibercoin, run:
 
-To run the fibercoin-qt tests manually, launch src/qt/test/fibercoin-qt_test
+    make check
 
-To add more fibercoin-qt tests, add them to the `src/qt/test/` directory and
-the `src/qt/test/test_main.cpp` file.
+This executes the configured test targets, including the core Fibercoin test binary.
+
+## Core unit tests
+
+The main core test executable is:
+
+    src/test/test_fibercoin
+
+Run it directly with:
+
+    src/test/test_fibercoin
+
+The test suite uses Boost.Test.
+
+Core test sources are located in:
+
+    src/test/
+
+Examples include tests for:
+
+- block validation
+- checkpoints
+- RPC behavior
+- wallet behavior
+- networking
+- transaction validation
+- signatures
+- serialization
+- cryptography
+- mempool behavior
+- mining
+- DoS handling
+
+## Adding core tests
+
+Add new `BOOST_AUTO_TEST_CASE` tests to an existing test source file, or add a new source file under:
+
+    src/test/
+
+New test files must also be added to the test build configuration.
+
+## Qt tests
+
+Qt test sources are located in:
+
+    src/qt/test/
+
+Current Qt tests include:
+
+- URI handling
+- payment server behavior
+
+The Qt test entry point is:
+
+    src/qt/test/test_main.cpp
+
+## Configure options
+
+Tests are enabled by default.
+
+They can be explicitly enabled with:
+
+    ./configure --enable-tests
+
+Test compilation can be disabled with:
+
+    ./configure --disable-tests
+
+## Release validation
+
+Before release, run the complete configured test suite:
+
+    make check
+
+CI release builds should also complete successfully on all supported platforms before tagging a release.

@@ -1,271 +1,380 @@
-Release Process
-====================
+# Fibercoin Release Process
 
-Before every release candidate:
+This document describes the current Fibercoin Core release process.
 
-* Update translations see [translation_process.md](https://github.com/didarmetu/Fibercoin/blob/master/doc/translation_process.md#synchronising-translations).
+The active release build system uses GitHub Actions for:
 
-Before every minor and major release:
+- Ubuntu 18.04 x86-64
+- Ubuntu 24.04 x86-64
+- Ubuntu 26.04 x86-64
+- Windows 11 x86-64
+- macOS Apple Silicon (`arm64`)
+- macOS Intel (`x86_64`)
+- macOS universal packaging
 
-* Update version in `configure.ac` (don't forget to set `CLIENT_VERSION_IS_RELEASE` to `true`)
-* Write release notes (see below)
+Legacy Gitian infrastructure remains in the repository for historical and deterministic-build reference, but it is not the primary v2.0.2.6 release pipeline.
 
-Before every major release:
+## 1. Prepare the release branch
 
-* Update hardcoded [seeds](/contrib/seeds/README.md), see [this pull request](https://github.com/bitcoin/bitcoin/pull/7415) for an example.
-* Update [`BLOCK_CHAIN_SIZE`](/src/qt/intro.cpp) to the current size plus some overhead.
-* Update `src/chainparams.cpp` with statistics about the transaction count and rate.
-* Update version of `contrib/gitian-descriptors/*.yml`: usually one'd want to do this on master after branching off the release - but be sure to at least do it before a new major release
+Before creating a release, make sure the release branch contains only the intended changes.
 
-### First time / New builders
+Check the working tree:
 
-If you're using the automated script (found in [contrib/gitian-build.sh](/contrib/gitian-build.sh)), then at this point you should run it with the "--setup" command. Otherwise ignore this.
+    git status
 
-Check out the source code in the following directory hierarchy.
+Review recent commits:
 
-    cd /path/to/your/toplevel/build
-    git clone https://github.com/fibercoin/gitian.sigs.git
-    git clone https://github.com/didarmetu/Fibercoin-detached-sigs.git
-    git clone https://github.com/devrandom/gitian-builder.git
-    git clone https://github.com/didarmetu/Fibercoin.git
+    git log --oneline --decorate -20
 
-### Fibercoin maintainers/release engineers, suggestion for writing release notes
+The working tree should be clean before final validation.
 
-Write release notes. git shortlog helps a lot, for example:
+## 2. Update the version
 
-    git shortlog --no-merges v(current version, e.g. 0.7.2)..v(new version, e.g. 0.8.0)
+Update the Fibercoin version in:
 
+    configure.ac
 
-Generate list of authors:
+For a final release, make sure:
 
-    git log --format='%aN' "$*" | sort -ui | sed -e 's/^/- /'
+    CLIENT_VERSION_IS_RELEASE
 
-Tag version (or release candidate) in git
+is enabled appropriately.
 
-    git tag -s v(new version, e.g. 0.8.0)
+Also verify any version values used by release packaging and CI workflows.
 
-### Setup and perform Gitian builds
+For v2.0.2.6, the expected client version is:
 
-If you're using the automated script (found in [contrib/gitian-build.sh](/contrib/gitian-build.sh)), then at this point you should run it with the "--build" command. Otherwise ignore this.
+    2.0.2.6
 
-Setup Gitian descriptors:
+## 3. Update release notes
 
-    pushd ./fibercoin
-    export SIGNER=(your Gitian key, ie bluematt, sipa, etc)
-    export VERSION=(new version, e.g. 0.8.0)
-    git fetch
-    git checkout v${VERSION}
-    popd
+Create or update the release-specific notes:
 
-Ensure your gitian.sigs are up-to-date if you wish to gverify your builds against other Gitian signatures.
+    doc/release-notes-2.0.2.6.md
 
-    pushd ./gitian.sigs
-    git pull
-    popd
+The release notes should describe user-visible changes, compatibility information, and upgrade instructions.
 
-Ensure gitian-builder is up-to-date:
+Do not include unverified changes.
 
-    pushd ./gitian-builder
-    git pull
-    popd
+## 4. Update translations
 
-### Fetch and create inputs: (first time, or when dependency versions change)
+Review the translation workflow described in:
 
-    pushd ./gitian-builder
-    mkdir -p inputs
-    wget -P inputs https://bitcoincore.org/cfields/osslsigncode-Backports-to-1.7.1.patch
-    wget -P inputs http://downloads.sourceforge.net/project/osslsigncode/osslsigncode/osslsigncode-1.7.1.tar.gz
-    popd
+    doc/translation_process.md
 
-Create the OS X SDK tarball, see the [OS X readme](README_osx.md) for details, and copy it into the inputs directory.
+When user-visible strings have changed, regenerate the translation sources:
 
-### Optional: Seed the Gitian sources cache and offline git repositories
+    cd src
+    make translate
 
-By default, Gitian will fetch source files as needed. To cache them ahead of time:
+Review the resulting changes before committing them.
 
-    pushd ./gitian-builder
-    make -C ../fibercoin/depends download SOURCES_PATH=`pwd`/cache/common
-    popd
+## 5. Review network and release-critical configuration
 
-Only missing files will be fetched, so this is safe to re-run for each build.
+Before release, review:
 
-NOTE: Offline builds must use the --url flag to ensure Gitian fetches only from local URLs. For example:
+- checkpoints
+- fixed seeds
+- DNS seeds
+- default network ports
+- protocol version
+- masternode configuration
+- spork configuration
+- release version values
 
-    pushd ./gitian-builder
-    ./bin/gbuild --url fibercoin=/path/to/fibercoin,signature=/path/to/sigs {rest of arguments}
-    popd
+For major releases, also review any estimated blockchain-size values and chain statistics used by the GUI.
 
-The gbuild invocations below <b>DO NOT DO THIS</b> by default.
+## 6. Push the release candidate branch
 
-### Build and sign Fibercoin for Linux, Windows, and OS X:
+Push the release branch to GitHub so the build workflows can run:
 
-    pushd ./gitian-builder
-    ./bin/gbuild --memory 3000 --commit fibercoin=v${VERSION} ../fibercoin/contrib/gitian-descriptors/gitian-linux.yml
-    ./bin/gsign --signer $SIGNER --release ${VERSION}-linux --destination ../gitian.sigs/ ../fibercoin/contrib/gitian-descriptors/gitian-linux.yml
-    mv build/out/fibercoin-*.tar.gz build/out/src/fibercoin-*.tar.gz ../
+    git push origin <branch>
 
-    ./bin/gbuild --memory 3000 --commit fibercoin=v${VERSION} ../fibercoin/contrib/gitian-descriptors/gitian-win.yml
-    ./bin/gsign --signer $SIGNER --release ${VERSION}-win-unsigned --destination ../gitian.sigs/ ../fibercoin/contrib/gitian-descriptors/gitian-win.yml
-    mv build/out/fibercoin-*-win-unsigned.tar.gz inputs/fibercoin-win-unsigned.tar.gz
-    mv build/out/fibercoin-*.zip build/out/fibercoin-*.exe ../
-
-    ./bin/gbuild --memory 3000 --commit fibercoin=v${VERSION} ../fibercoin/contrib/gitian-descriptors/gitian-osx.yml
-    ./bin/gsign --signer $SIGNER --release ${VERSION}-osx-unsigned --destination ../gitian.sigs/ ../fibercoin/contrib/gitian-descriptors/gitian-osx.yml
-    mv build/out/fibercoin-*-osx-unsigned.tar.gz inputs/fibercoin-osx-unsigned.tar.gz
-    mv build/out/fibercoin-*.tar.gz build/out/fibercoin-*.dmg ../
+For the v2.0.2.6 preparation branch:
 
-    ./bin/gbuild --memory 3000 --commit fibercoin=v${VERSION} ../fibercoin/contrib/gitian-descriptors/gitian-aarch64.yml
-    ./bin/gsign --signer $SIGNER --release ${VERSION}-linux --destination ../gitian.sigs/ ../fibercoin/contrib/gitian-descriptors/gitian-aarch64.yml
-    mv build/out/fibercoin-*.tar.gz build/out/src/fibercoin-*.tar.gz ../
-    popd
-
-Build output expected:
-
-  1. source tarball (`fibercoin-${VERSION}.tar.gz`)
-  2. linux 32-bit and 64-bit dist tarballs (`fibercoin-${VERSION}-linux[32|64].tar.gz`)
-  3. windows 32-bit and 64-bit unsigned installers and dist zips (`fibercoin-${VERSION}-win[32|64]-setup-unsigned.exe`, `fibercoin-${VERSION}-win[32|64].zip`)
-  4. OS X unsigned installer and dist tarball (`fibercoin-${VERSION}-osx-unsigned.dmg`, `fibercoin-${VERSION}-osx64.tar.gz`)
-  5. Gitian signatures (in `gitian.sigs/${VERSION}-<linux|{win,osx}-unsigned>/(your Gitian key)/`)
+    git push origin upgrade/build-modernization
 
-### Verify other gitian builders signatures to your own. (Optional)
+## 7. Run GitHub Actions builds
 
-Add other gitian builders keys to your gpg keyring, and/or refresh keys.
+The active workflows are:
 
-    gpg --import fibercoin/contrib/gitian-keys/*.pgp
-    gpg --refresh-keys
-
-Verify the signatures
-
-    pushd ./gitian-builder
-    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-linux ../fibercoin/contrib/gitian-descriptors/gitian-linux.yml
-    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-win-unsigned ../fibercoin/contrib/gitian-descriptors/gitian-win.yml
-    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-unsigned ../fibercoin/contrib/gitian-descriptors/gitian-osx.yml
-    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-aarch64 ../fibercoin/contrib/gitian-descriptors/gitian-aarch64.yml
-    popd
-
-### Next steps:
-
-Commit your signature to gitian.sigs:
-
-    pushd gitian.sigs
-    git add ${VERSION}-linux/${SIGNER}
-    git add ${VERSION}-win-unsigned/${SIGNER}
-    git add ${VERSION}-osx-unsigned/${SIGNER}
-    git add ${VERSION}-aarch64/${SIGNER}
-    git commit -a
-    git push  # Assuming you can push to the gitian.sigs tree
-    popd
-
-Codesigner only: Create Windows/OS X detached signatures:
-- Only one person handles codesigning. Everyone else should skip to the next step.
-- Only once the Windows/OS X builds each have 3 matching signatures may they be signed with their respective release keys.
-
-Codesigner only: Sign the osx binary:
-
-    transfer fibercoin-osx-unsigned.tar.gz to osx for signing
-    tar xf fibercoin-osx-unsigned.tar.gz
-    ./detached-sig-create.sh -s "Key ID"
-    Enter the keychain password and authorize the signature
-    Move signature-osx.tar.gz back to the gitian host
-
-Codesigner only: Sign the windows binaries:
-
-    tar xf fibercoin-win-unsigned.tar.gz
-    ./detached-sig-create.sh -key /path/to/codesign.key
-    Enter the passphrase for the key when prompted
-    signature-win.tar.gz will be created
-
-Codesigner only: Commit the detached codesign payloads:
-
-    cd ~/fibercoin-detached-sigs
-    checkout the appropriate branch for this release series
-    rm -rf *
-    tar xf signature-osx.tar.gz
-    tar xf signature-win.tar.gz
-    git add -a
-    git commit -m "point to ${VERSION}"
-    git tag -s v${VERSION} HEAD
-    git push the current branch and new tag
-
-Non-codesigners: wait for Windows/OS X detached signatures:
-
-- Once the Windows/OS X builds each have 3 matching signatures, they will be signed with their respective release keys.
-- Detached signatures will then be committed to the [fibercoin-detached-sigs](https://github.com/didarmetu/Fibercoin-detached-sigs) repository, which can be combined with the unsigned apps to create signed binaries.
-
-Create (and optionally verify) the signed OS X binary:
-
-    pushd ./gitian-builder
-    ./bin/gbuild -i --commit signature=v${VERSION} ../fibercoin/contrib/gitian-descriptors/gitian-osx-signer.yml
-    ./bin/gsign --signer $SIGNER --release ${VERSION}-osx-signed --destination ../gitian.sigs/ ../fibercoin/contrib/gitian-descriptors/gitian-osx-signer.yml
-    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-signed ../fibercoin/contrib/gitian-descriptors/gitian-osx-signer.yml
-    mv build/out/fibercoin-osx-signed.dmg ../fibercoin-${VERSION}-osx.dmg
-    popd
-
-Create (and optionally verify) the signed Windows binaries:
-
-    pushd ./gitian-builder
-    ./bin/gbuild -i --commit signature=v${VERSION} ../fibercoin/contrib/gitian-descriptors/gitian-win-signer.yml
-    ./bin/gsign --signer $SIGNER --release ${VERSION}-win-signed --destination ../gitian.sigs/ ../fibercoin/contrib/gitian-descriptors/gitian-win-signer.yml
-    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-win-signed ../fibercoin/contrib/gitian-descriptors/gitian-win-signer.yml
-    mv build/out/fibercoin-*win64-setup.exe ../fibercoin-${VERSION}-win64-setup.exe
-    mv build/out/fibercoin-*win32-setup.exe ../fibercoin-${VERSION}-win32-setup.exe
-    popd
-
-Commit your signature for the signed OS X/Windows binaries:
-
-    pushd gitian.sigs
-    git add ${VERSION}-osx-signed/${SIGNER}
-    git add ${VERSION}-win-signed/${SIGNER}
-    git commit -a
-    git push  # Assuming you can push to the gitian.sigs tree
-    popd
-
-### After 3 or more people have gitian-built and their results match:
-
-- Create `SHA256SUMS.asc` for the builds, and GPG-sign it:
-
-```bash
-sha256sum * > SHA256SUMS
-```
-
-The list of files should be:
-```
-fibercoin-${VERSION}-aarch64-linux-gnu.tar.gz
-fibercoin-${VERSION}-arm-linux-gnueabihf.tar.gz
-fibercoin-${VERSION}-i686-pc-linux-gnu.tar.gz
-fibercoin-${VERSION}-x86_64-linux-gnu.tar.gz
-fibercoin-${VERSION}-osx64.tar.gz
-fibercoin-${VERSION}-osx.dmg
-fibercoin-${VERSION}.tar.gz
-fibercoin-${VERSION}-win32-setup.exe
-fibercoin-${VERSION}-win32.zip
-fibercoin-${VERSION}-win64-setup.exe
-fibercoin-${VERSION}-win64.zip
-```
-The `*-debug*` files generated by the gitian build contain debug symbols
-for troubleshooting by developers. It is assumed that anyone that is interested
-in debugging can run gitian to generate the files for themselves. To avoid
-end-user confusion about which file to pick, as well as save storage
-space *do not upload these to the https://fibercoin.tk/ server*.
-
-- GPG-sign it, delete the unsigned file:
-```
-gpg --digest-algo sha256 --clearsign SHA256SUMS # outputs SHA256SUMS.asc
-rm SHA256SUMS
-```
-(the digest algorithm is forced to sha256 to avoid confusion of the `Hash:` header that GPG adds with the SHA256 used for the files)
-Note: check that SHA256SUMS itself doesn't end up in SHA256SUMS, which is a spurious/nonsensical entry.
-
-- Upload zips and installers, as well as `SHA256SUMS.asc` from last step, to the GitHub release (see below)
-
-- Announce the release:
-
-  - bitcointalk announcement thread
-
-  - Optionally twitter, reddit /r/Fibercoin, ... but this will usually sort out itself
-
-  - Archive release notes for the new version to `doc/release-notes/` (branch `master` and branch of the release)
-
-  - Create a [new GitHub release](https://github.com/didarmetu/Fibercoin/releases/new) with a link to the archived release notes.
-
-  - Celebrate
+    .github/workflows/ubuntu-18.04-build.yml
+    .github/workflows/ubuntu-build.yml
+    .github/workflows/ubuntu-26.04-build.yml
+    .github/workflows/windows-build.yml
+    .github/workflows/macos-build.yml
+
+They can run automatically on the configured branch or manually through GitHub Actions using `workflow_dispatch`.
+
+All release workflows must complete successfully before tagging the release.
+
+## 8. Validate Ubuntu artifacts
+
+The active Ubuntu release workflows provide:
+
+    Ubuntu 18.04 x86-64
+    Ubuntu 24.04 x86-64
+    Ubuntu 26.04 x86-64
+
+The release artifacts are:
+
+    fibercoin-Ubuntu-18.04-x86_64
+    fibercoin-Ubuntu-24.04-x86_64
+    fibercoin-Ubuntu-26.04-x86_64
+
+Build environments:
+
+- Ubuntu 18.04 is built inside an `ubuntu:18.04` Docker userspace running on a GitHub-hosted Ubuntu 24.04 runner.
+- Ubuntu 24.04 is built directly on the GitHub-hosted Ubuntu 24.04 runner.
+- Ubuntu 26.04 is built directly on the GitHub-hosted Ubuntu 26.04 runner.
+
+Diagnostic artifacts are also available for failed or suspicious builds.
+
+For each Ubuntu release artifact, confirm that the expected binaries are present and executable.
+
+At minimum, validate:
+
+    fibercoind
+    fibercoin-cli
+    fibercoin-tx
+    fibercoin-qt
+
+Run basic version checks on each produced package.
+
+For v2.0.2.6, confirm:
+
+    fibercoind --version
+    fibercoin-cli --version
+
+report version:
+
+    2.0.2.6
+
+Also verify that the packaged binaries start without missing-library errors on their target Ubuntu version.
+
+## 9. Validate Windows artifacts
+
+The Windows workflow is:
+
+    Windows 11 x86-64 Build
+
+The release artifact is published as:
+
+    fibercoin-Windows-11-x86_64
+
+The diagnostic artifact is:
+
+    fibercoin-windows-11-x86_64-diagnostics
+
+Verify that the Windows package contains the expected executables and that Fibercoin-Qt launches successfully.
+
+Perform a basic wallet and network smoke test on a supported Windows system before release.
+
+## 10. Validate macOS artifacts
+
+The macOS workflow is:
+
+    macOS Universal Build
+
+It builds separate packages for:
+
+    arm64
+    x86_64
+
+and combines them into a universal package.
+
+Architecture artifacts include:
+
+    fibercoin-macos-arm64
+    fibercoin-macos-x86_64
+
+The final universal release artifact is:
+
+    fibercoin-macOS-universal-unsigned
+
+The macOS workflow also audits runtime dependencies to ensure the portable package does not retain Homebrew library paths.
+
+Verify that the final application bundle and command-line binaries run without depending on the build machine's Homebrew installation.
+
+## 11. Final binary validation
+
+Release validation must be performed on the actual built artifacts, not only on locally compiled binaries.
+
+Check the reported version:
+
+    fibercoin-cli --version
+    fibercoind --version
+
+Confirm that the version is:
+
+    v2.0.2.6
+
+Perform a clean restart and verify:
+
+    fibercoin-cli getblockcount
+    fibercoin-cli getbestblockhash
+    fibercoin-cli getconnectioncount
+    fibercoin-cli getnetworkinfo
+
+Compare the final chain height and best block hash with a trusted established Fibercoin node.
+
+## 12. Masternode and spork validation
+
+For v2.0.2.6, verify masternode synchronization:
+
+    fibercoin-cli mnsync status
+
+Verify the masternode list:
+
+    fibercoin-cli listmasternodes
+
+Verify current sporks:
+
+    fibercoin-cli spork show
+    fibercoin-cli spork active
+
+Confirm:
+
+- masternode synchronization completes
+- SPORK_8 masternode payment enforcement remains active
+- deprecated sporks 7, 11, and 12 behave as expected
+- deprecated-spork administrative updates are rejected
+- masternode payment validation continues normally
+
+Monitor several blocks after restart before final release.
+
+## 13. Wallet smoke tests
+
+Using the built release artifacts, test basic wallet operation.
+
+At minimum verify:
+
+- wallet startup
+- wallet unlock and lock
+- receive address generation
+- transaction creation
+- transaction history
+- RPC connectivity
+- blockchain synchronization
+- normal shutdown and restart
+
+Where appropriate, also test staking and masternode controller functionality.
+
+Use test funds or controlled release-validation wallets when possible.
+
+## 14. Verify clean shutdown and restart
+
+Shut down Fibercoin normally.
+
+Restart using the same data directory.
+
+Confirm that:
+
+- the node starts without database errors
+- chainstate loads correctly
+- peers reconnect
+- masternode synchronization resumes
+- the wallet loads correctly
+- the node remains on the expected best block
+
+The release includes improved recovery after unclean shutdown, but a normal release validation should still include clean shutdown testing.
+
+## 15. Review documentation
+
+Before tagging, run:
+
+    git diff --check
+
+Check documentation links and remove stale references.
+
+Review at minimum:
+
+    doc/README.md
+    doc/release-notes-2.0.2.6.md
+    doc/build-osx.md
+    doc/build-unix.md
+    doc/dependencies.md
+    doc/init.md
+    doc/files.md
+    doc/tor.md
+    doc/masternode_conf.md
+
+## 16. Generate checksums
+
+After selecting the final release artifacts, generate SHA-256 checksums.
+
+On Linux:
+
+    sha256sum <release-files> > SHA256SUMS
+
+On macOS:
+
+    shasum -a 256 <release-files> > SHA256SUMS
+
+Review the checksum file carefully before publishing it.
+
+If release signing is used, sign the checksum file with the appropriate release key.
+
+## 17. Tag the tested commit
+
+Only tag the exact commit whose artifacts were validated.
+
+Example:
+
+    git tag -s v2.0.2.6
+
+Verify the tag:
+
+    git show v2.0.2.6
+
+Then push it:
+
+    git push origin v2.0.2.6
+
+Do not create the final tag before artifact and network validation is complete.
+
+## 18. Create the GitHub release
+
+Create the release at:
+
+    https://github.com/didarmetu/Fibercoin/releases
+
+Use the tested tag:
+
+    v2.0.2.6
+
+Attach the validated release artifacts and checksum file.
+
+Use:
+
+    doc/release-notes-2.0.2.6.md
+
+as the basis for the GitHub release description.
+
+## 19. Post-release validation
+
+After publishing the release:
+
+- download the public release artifacts
+- verify their checksums
+- install or extract them normally
+- confirm the reported version
+- connect to the Fibercoin network
+- verify blockchain synchronization
+- verify masternode synchronization
+- verify current spork state
+- verify the published files match the previously tested artifacts
+
+## Legacy Gitian infrastructure
+
+Fibercoin still contains historical Gitian infrastructure under:
+
+    contrib/gitian-build.sh
+    contrib/gitian-descriptors/
+    doc/gitian-building.md
+
+These files are retained for deterministic-build reference and possible future modernization.
+
+They are not the primary release path for Fibercoin Core v2.0.2.6.
+
+Do not follow the old macOS SDK, detached-signature, or Gitian multi-builder instructions as the active v2.0.2.6 release procedure unless the Gitian pipeline has been separately restored and validated.

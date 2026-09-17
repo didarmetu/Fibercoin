@@ -1,99 +1,159 @@
-Sample init scripts and service configuration for fibercoind
-==========================================================
+# Running fibercoind as a System Service
 
-Sample scripts and configuration files for systemd, Upstart and OpenRC
-can be found in the contrib/init folder.
+Fibercoin can run as a background service on a Linux server or VPS.
 
-    contrib/init/fibercoind.service:    systemd service unit configuration
-    contrib/init/fibercoind.openrc:     OpenRC compatible SysV style init script
-    contrib/init/fibercoind.openrcconf: OpenRC conf.d file
-    contrib/init/fibercoind.conf:       Upstart service configuration file
-    contrib/init/fibercoind.init:       CentOS compatible SysV style init script
+This is useful for public nodes, masternodes, and other systems that should start `fibercoind` automatically at boot.
 
-1. Service User
----------------------------------
+Sample service files are available under:
 
-All three startup configurations assume the existence of a "fibercoin" user
-and group.  They must be created before attempting to use these scripts.
+    contrib/init/
 
-2. Configuration
----------------------------------
+## Dedicated service user
 
-At a bare minimum, fibercoind requires that the rpcpassword setting be set
-when running as a daemon.  If the configuration file does not exist or this
-setting is not set, fibercoind will shutdown promptly after startup.
+For a server installation, run `fibercoind` under a dedicated non-root user such as:
 
-This password does not have to be remembered or typed as it is mostly used
-as a fixed token that fibercoind and client programs read from the configuration
-file, however it is recommended that a strong and secure password be used
-as this password is security critical to securing the wallet should the
-wallet be enabled.
+    fibercoin
 
-If fibercoind is run with "-daemon" flag, and no rpcpassword is set, it will
-print a randomly generated suitable password to stderr.  You can also
-generate one from the shell yourself like this:
+The Fibercoin configuration and data directories should be owned by that user.
 
-bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'
+Do not run `fibercoind` as root unless there is a specific administrative reason to do so.
 
-Once you have a password in hand, set rpcpassword= in /etc/fibercoin/fibercoin.conf
+## Configuration
 
-For an example configuration file that describes the configuration settings,
-see contrib/debian/examples/fibercoin.conf.
+A server installation can use:
 
-3. Paths
----------------------------------
+    /etc/fibercoin/fibercoin.conf
 
-All three configurations assume several paths that might need to be adjusted.
+with its blockchain and wallet data stored separately, for example:
 
-Binary:              /usr/bin/fibercoind
-Configuration file:  /etc/fibercoin/fibercoin.conf
-Data directory:      /var/lib/fibercoind
-PID file:            /var/run/fibercoind/fibercoind.pid (OpenRC and Upstart)
-                     /var/lib/fibercoind/fibercoind.pid (systemd)
+    /var/lib/fibercoind
 
-The configuration file, PID directory (if applicable) and data directory
-should all be owned by the fibercoin user and group.  It is advised for security
-reasons to make the configuration file and data directory only readable by the
-fibercoin user and group.  Access to fibercoin-cli and other fibercoind rpc clients
-can then be controlled by group membership.
+The exact paths depend on the service configuration being used.
 
-4. Installing Service Configuration
------------------------------------
+Protect configuration and wallet data from other system users.
 
-4a) systemd
+For example:
 
-Installing this .service file consists on just copying it to
-/usr/lib/systemd/system directory, followed by the command
-"systemctl daemon-reload" in order to update running systemd configuration.
+    chmod 600 /etc/fibercoin/fibercoin.conf
 
-To test, run "systemctl start fibercoind" and to enable for system startup run
-"systemctl enable fibercoind"
+## RPC authentication
 
-4b) OpenRC
+Fibercoin supports automatic RPC cookie authentication.
 
-Rename fibercoind.openrc to fibercoind and drop it in /etc/init.d.  Double
-check ownership and permissions and make it executable.  Test it with
-"/etc/init.d/fibercoind start" and configure it to run on startup with
-"rc-update add fibercoind"
+When `rpcpassword` is not configured, Fibercoin generates a random authentication cookie at startup.
 
-4c) Upstart (for Debian/Ubuntu based distributions)
+The default cookie file is:
 
-Drop fibercoind.conf in /etc/init.  Test by running "service fibercoind start"
-it will automatically start on reboot.
+    .cookie
 
-NOTE: This script is incompatible with CentOS 5 and Amazon Linux 2014 as they
-use old versions of Upstart and do not supply the start-stop-daemon uitility.
+inside the Fibercoin data directory.
 
-4d) CentOS
+The cookie is removed when Fibercoin shuts down normally.
 
-Copy fibercoind.init to /etc/init.d/fibercoind. Test by running "service fibercoind start".
+A custom cookie location can be selected with:
 
-Using this script, you can adjust the path and flags to the fibercoind program by
-setting the BITCOINGREEND and FLAGS environment variables in the file
-/etc/sysconfig/fibercoind. You can also use the DAEMONOPTS environment variable here.
+    -rpccookiefile=<file>
 
-5. Auto-respawn
------------------------------------
+Explicit RPC credentials can also be configured when required:
 
-Auto respawning is currently only configured for Upstart and systemd.
-Reasonable defaults have been chosen but YMMV.
+    rpcuser=USERNAME
+    rpcpassword=STRONG_RANDOM_PASSWORD
+
+Do not expose the RPC interface directly to untrusted networks.
+
+## systemd
+
+The supplied systemd service template is:
+
+    contrib/init/fibercoind.service.app
+
+Review the service file before installation and adjust the executable, configuration, user, group, and data-directory paths for your system.
+
+Review the template and create the final systemd unit as:
+
+    /etc/systemd/system/fibercoind.service
+
+Adjust any paths or placeholders in the template for your installation before enabling the service.
+
+Then reload systemd:
+
+    sudo systemctl daemon-reload
+
+Start Fibercoin:
+
+    sudo systemctl start fibercoind
+
+Check its status:
+
+    sudo systemctl status fibercoind
+
+Enable automatic startup at boot:
+
+    sudo systemctl enable fibercoind
+
+Stop the service:
+
+    sudo systemctl stop fibercoind
+
+Restart the service:
+
+    sudo systemctl restart fibercoind
+
+View recent service logs with:
+
+    journalctl -u fibercoind
+
+## OpenRC and legacy service scripts
+
+Additional service scripts may be available under:
+
+    contrib/init/
+
+These can include OpenRC, Upstart, or SysV-style configurations.
+
+Use them only on systems that still use the corresponding service manager.
+
+For modern Linux distributions using systemd, the systemd service unit is the preferred starting point.
+
+## Masternodes
+
+A Fibercoin masternode can also run under the system service.
+
+Typical masternode configuration includes:
+
+    masternode=1
+    masternodeprivkey=MASTERNODE_PRIVATE_KEY
+
+The default Fibercoin mainnet P2P port is:
+
+    30114
+
+A public masternode must be reachable by other Fibercoin nodes on its configured P2P address and port.
+
+Do not place the wallet private key controlling the 10,000 FBC collateral on the remote masternode server.
+
+## Checking the node
+
+After starting the service, check the node with:
+
+    fibercoin-cli getinfo
+    fibercoin-cli getconnectioncount
+    fibercoin-cli getblockcount
+
+For a masternode:
+
+    fibercoin-cli getmasternodestatus
+
+Check synchronization before relying on node or masternode services.
+
+## Security
+
+For server installations:
+
+- run Fibercoin under a dedicated non-root user
+- restrict permissions on wallet and configuration files
+- keep RPC access restricted to trusted systems
+- use firewall rules appropriate for the node
+- expose the P2P port only when inbound connectivity is required
+- back up wallet data before upgrades
+- shut down Fibercoin cleanly before replacing binaries

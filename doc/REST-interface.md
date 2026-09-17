@@ -1,27 +1,168 @@
-Unauthenticated REST Interface
-==============================
+# Fibercoin Unauthenticated REST Interface
 
-The REST API can be enabled with the `-rest` option.
+Fibercoin provides a small read-only REST interface for accessing transaction and block data.
 
-Supported API
--------------
-`GET /rest/tx/TX-HASH.{bin|hex|json}`
+The REST interface is disabled by default.
 
-Given a transaction hash,
-Returns a transaction, in binary, hex-encoded binary or JSON formats.
+Enable it with:
 
-`GET /rest/block/BLOCK-HASH.{bin|hex|json}`
-`GET /rest/block/notxdetails/BLOCK-HASH.{bin|hex|json}`
+    fibercoind -rest
 
-Given a block hash,
-Returns a block, in binary, hex-encoded binary or JSON formats.
+or add the following to `fibercoin.conf`:
 
-The HTTP request and response are both handled entirely in-memory, thus making maximum memory usage at least 2.66MB (1 MB max block, plus hex encoding) per request.
+    rest=1
 
-With the /notxdetails/ option JSON response will only contain the transaction hash instead of the complete transaction details. The option only affects the JSON response.
+## Important security note
 
-For full TX query capability, one must enable the transaction index via "txindex=1" command line / configuration option.
+The REST interface is unauthenticated.
 
-Risks
--------------
-Running a webbrowser on the same node with a REST enabled fibercoind can be a risk. Accessing prepared XSS websites could read out tx/block data of your node by placing links like `<script src="http://127.0.0.1:1234/tx/json/1234567890">` which might break the nodes privacy.
+Do not expose the Fibercoin HTTP/RPC listener to untrusted networks unless you understand the security and privacy implications.
+
+REST access should normally be restricted to trusted systems or localhost.
+
+## Supported output formats
+
+REST endpoints support the following output formats:
+
+    .bin
+    .hex
+    .json
+
+The requested format is appended to the object hash.
+
+Examples:
+
+    /rest/tx/TX_HASH.json
+    /rest/block/BLOCK_HASH.hex
+
+## Transaction endpoint
+
+Retrieve a transaction by transaction ID:
+
+    GET /rest/tx/TX_HASH.bin
+    GET /rest/tx/TX_HASH.hex
+    GET /rest/tx/TX_HASH.json
+
+`TX_HASH` must be a valid 64-character hexadecimal transaction hash.
+
+Example:
+
+    curl http://127.0.0.1:33114/rest/tx/TX_HASH.json
+
+If the transaction cannot be found, Fibercoin returns an HTTP 404 response.
+
+For complete historical transaction lookup, enabling the transaction index may be necessary:
+
+    txindex=1
+
+Changing `txindex` may require rebuilding or reindexing blockchain data before historical transactions become available through the index.
+
+## Block endpoint
+
+Retrieve a block by block hash:
+
+    GET /rest/block/BLOCK_HASH.bin
+    GET /rest/block/BLOCK_HASH.hex
+    GET /rest/block/BLOCK_HASH.json
+
+`BLOCK_HASH` must be a valid 64-character hexadecimal block hash.
+
+Example:
+
+    curl http://127.0.0.1:33114/rest/block/BLOCK_HASH.json
+
+The JSON form includes transaction details.
+
+## Block endpoint without transaction details
+
+For a smaller JSON response containing transaction hashes instead of complete transaction details, use:
+
+    GET /rest/block/notxdetails/BLOCK_HASH.json
+
+Example:
+
+    curl http://127.0.0.1:33114/rest/block/notxdetails/BLOCK_HASH.json
+
+The `notxdetails` form affects JSON output only.
+
+Binary and hexadecimal block serialization remain based on the complete block data.
+
+## HTTP status responses
+
+Typical responses include:
+
+    200 OK
+
+The requested transaction or block was found.
+
+    400 Bad Request
+
+The supplied hash is malformed.
+
+    404 Not Found
+
+The requested transaction, block, or output format was not found.
+
+    503 Service Unavailable
+
+Fibercoin is temporarily unable to service the request, such as during certain startup or synchronization states.
+
+## RPC and HTTP configuration
+
+REST uses Fibercoin's HTTP/RPC server infrastructure.
+
+Relevant options include:
+
+    -rest
+    -rpcbind=<address>
+    -rpcallowip=<address>
+    -rpcport=<port>
+    -rpcthreads=<n>
+    -rpckeepalive
+
+The default Fibercoin mainnet RPC port is:
+
+    33114
+
+The testnet RPC port is:
+
+    169422
+
+Be especially careful when changing `rpcbind` or `rpcallowip`, because doing so can make REST and RPC services reachable from other systems.
+
+## Local example
+
+Start Fibercoin with REST enabled:
+
+    fibercoind -rest
+
+Then request network data locally.
+
+Example block request:
+
+    curl http://127.0.0.1:33114/rest/block/BLOCK_HASH.json
+
+Example transaction request:
+
+    curl http://127.0.0.1:33114/rest/tx/TX_HASH.json
+
+Replace `BLOCK_HASH` and `TX_HASH` with actual Fibercoin hashes.
+
+## Privacy considerations
+
+A REST-enabled node can reveal blockchain and transaction information to any client that can reach the HTTP service.
+
+Running a web browser on the same machine as an exposed REST service can also create privacy risks if malicious web content is able to make requests to the local service.
+
+For normal local administration:
+
+- bind RPC/REST access only where needed
+- avoid exposing the RPC port directly to the public Internet
+- use firewall rules to restrict access
+- keep REST disabled when it is not required
+
+## REST versus JSON-RPC
+
+The REST interface is intended for simple unauthenticated read access to selected blockchain objects.
+
+For administrative operations, wallet operations, node control, or the full RPC command set, use `fibercoin-cli` or the authenticated JSON-RPC interface instead.

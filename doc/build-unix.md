@@ -1,212 +1,300 @@
-UNIX BUILD NOTES
-====================
-Some notes on how to build Fibercoin in Unix.
+# Fibercoin Unix and Ubuntu Build Guide
 
-Note
----------------------
-Always use absolute paths to configure and compile fibercoin and the dependencies,
-for example, when specifying the the path of the dependency:
+This guide describes the current Linux build process for Fibercoin Core.
 
-	../dist/configure --enable-cxx --disable-shared --with-pic --prefix=$BDB_PREFIX
+The active Fibercoin Linux release workflows provide builds for:
 
-Here BDB_PREFIX must absolute path - it is defined using $(pwd) which ensures
-the usage of the absolute path.
+    Ubuntu 18.04 x86_64
+    Ubuntu 24.04 x86_64
+    Ubuntu 26.04 x86_64
 
-To Build
----------------------
+Ubuntu 24.04 is the current primary stable Linux release environment.
 
-```bash
-./autogen.sh && ./configure && make -j4
-make install # optional
-```
+Ubuntu 18.04 is provided for older Fibercoin systems and existing masternode deployments.
 
-This will build fibercoin-qt as well if the dependencies are met.
+Ubuntu 26.04 is provided for users on the newest Ubuntu LTS generation. The GitHub-hosted Ubuntu 26.04 runner is currently in public preview, so this build should be treated as an additional compatibility target until the runner reaches general availability.
 
-Dependencies
----------------------
+## Build requirements
 
-These dependencies are required:
+Install the packages used by the current Ubuntu build:
 
- Library     | Purpose          | Description
- ------------|------------------|----------------------
- libssl      | SSL Support      | Secure communications
- libboost    | Boost            | C++ Library
+    sudo apt-get update
 
-Optional dependencies:
+    sudo apt-get install -y \
+      build-essential \
+      libtool \
+      autotools-dev \
+      automake \
+      autoconf \
+      pkg-config \
+      curl \
+      file \
+      libssl-dev \
+      libevent-dev \
+      libboost-system-dev \
+      libboost-filesystem-dev \
+      libboost-program-options-dev \
+      libboost-thread-dev \
+      libboost-chrono-dev \
+      libboost-test-dev \
+      libminiupnpc-dev \
+      libzmq3-dev \
+      qtbase5-dev \
+      qttools5-dev \
+      qttools5-dev-tools \
+      libprotobuf-dev \
+      protobuf-compiler \
+      libqrencode-dev
 
- Library     | Purpose          | Description
- ------------|------------------|----------------------
- miniupnpc   | UPnP Support     | Firewall-jumping support
- libdb4.8    | Berkeley DB      | Wallet storage (only needed when wallet enabled)
- qt          | GUI              | GUI toolkit (only needed when GUI enabled)
- protobuf    | Payments in GUI  | Data interchange format used for payment protocol (only needed when GUI enabled)
- libqrencode | QR codes in GUI  | Optional for generating QR codes (only needed when GUI enabled)
- univalue    | Utility          | JSON parsing and encoding (bundled version will be used unless --with-system-univalue passed to configure)
+Fibercoin v2.0.2.6 uses Qt 5.
 
-For the versions used in the release, see [release-process.md](release-process.md) under *Fetch and build inputs*.
+Qt 6 migration is a separate future modernization project.
 
-System requirements
---------------------
+## Berkeley DB 4.8
 
-C++ compilers are memory-hungry. It is recommended to have at least 1 GB of
-memory available when compiling Fibercoin. With 512MB of memory or less
-compilation will take much longer due to swap thrashing.
+Fibercoin wallet compatibility uses Berkeley DB 4.8.30.NC.
 
-Dependency Build Instructions: Ubuntu & Debian
-----------------------------------------------
-Build requirements:
+The current Ubuntu build compiles Berkeley DB locally rather than using a system Berkeley DB package.
 
-	sudo apt-get install build-essential libtool autotools-dev autoconf pkg-config libssl-dev
+Choose build and installation directories:
 
-For Ubuntu 12.04 and later or Debian 7 and later libboost-all-dev has to be installed:
+    BDB_SOURCE="$HOME/fibercoin-deps/bdb-source"
+    BDB_PREFIX="$HOME/fibercoin-deps/bdb48"
 
-	sudo apt-get install libboost-all-dev
+    mkdir -p "$BDB_SOURCE" "$BDB_PREFIX"
+    cd "$BDB_SOURCE"
 
- db4.8 packages are available [here](https://launchpad.net/~bitcoin/+archive/bitcoin).
- You can add the repository using the following command:
+Download Berkeley DB:
 
-        sudo add-apt-repository ppa:bitcoin/bitcoin
-        sudo apt-get update
+    curl --location --fail \
+      --output db-4.8.30.NC.tar.gz \
+      https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
 
- Ubuntu 12.04 and later have packages for libdb5.1-dev and libdb5.1++-dev,
- but using these will break binary wallet compatibility, and is not recommended.
+Verify the archive:
 
-For other Debian & Ubuntu (with ppa):
+    echo \
+      "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef db-4.8.30.NC.tar.gz" \
+      | sha256sum -c -
 
-	sudo apt-get install libdb4.8-dev libdb4.8++-dev
+Extract it:
 
-Optional:
+    tar -xzf db-4.8.30.NC.tar.gz
+    cd db-4.8.30.NC
 
-	sudo apt-get install libminiupnpc-dev (see --with-miniupnpc and --enable-upnp-default)
+Apply the compatibility changes used by the current build:
 
-Dependencies for the GUI: Ubuntu & Debian
------------------------------------------
+    sed -i \
+      's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' \
+      dbinc/atomic.h
 
-If you want to build Fibercoin-Qt, make sure that the required packages for Qt development
-are installed. Qt 5 is necessary to build the GUI.
-If both Qt 4 and Qt 5 are installed, Qt 5 will be used.
-To build without GUI pass `--without-gui`.
+    sed -i \
+      's/atomic_init/atomic_init_db/g' \
+      dbinc/atomic.h \
+      mp/mp_region.c \
+      mp/mp_mvcc.c \
+      mp/mp_fget.c \
+      mutex/mut_method.c \
+      mutex/mut_tas.c
 
-For Qt 5 you need the following:
+Build Berkeley DB:
 
-    sudo apt-get install libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler
+    cd build_unix
 
-libqrencode (optional) can be installed with:
+    CFLAGS="-Wno-error=implicit-function-declaration" \
+      ../dist/configure \
+      --prefix="$BDB_PREFIX" \
+      --enable-cxx \
+      --disable-shared \
+      --with-pic \
+      --disable-replication
 
-    sudo apt-get install libqrencode-dev
+    make -j"$(nproc)"
+    make install
 
-Once these are installed, they will be found by configure and a fibercoin-qt executable will be
-built by default.
+## Build Fibercoin
 
-Notes
------
-The release is built with GCC and then "strip fibercoind" to strip the debug
-symbols, which reduces the executable size by about 90%.
+Return to the Fibercoin source directory.
 
+Generate the build system:
 
-miniupnpc
----------
+    ./autogen.sh
 
-[miniupnpc](http://miniupnp.free.fr/) may be used for UPnP port mapping.  It can be downloaded from [here](
-http://miniupnp.tuxfamily.org/files/).  UPnP support is compiled in and
-turned off by default.  See the configure options for upnp behavior desired:
+Configure using the locally built Berkeley DB:
 
-	--without-miniupnpc      No UPnP support miniupnp not required
-	--disable-upnp-default   (the default) UPnP support turned off by default at runtime
-	--enable-upnp-default    UPnP support turned on by default at runtime
+    BDB_PREFIX="$HOME/fibercoin-deps/bdb48"
 
-To build:
+    CPPFLAGS="-I$BDB_PREFIX/include" \
+    LDFLAGS="-L$BDB_PREFIX/lib" \
+    ./configure \
+      --disable-tests \
+      --with-gui=qt5 \
+      --with-miniupnpc
 
-	tar -xzvf miniupnpc-1.6.tar.gz
-	cd miniupnpc-1.6
-	make
-	sudo su
-	make install
+Compile:
 
+    make -j"$(nproc)"
 
-Berkeley DB
------------
-It is recommended to use Berkeley DB 4.8. If you have to build it yourself:
+The primary binaries are:
 
-```bash
-BITCOINGREEN_ROOT=$(pwd)
+    src/fibercoind
+    src/fibercoin-cli
+    src/fibercoin-tx
+    src/qt/fibercoin-qt
 
-# Pick some path to install BDB to, here we create a directory within the fibercoin directory
-BDB_PREFIX="${BITCOINGREEN_ROOT}/db4"
-mkdir -p $BDB_PREFIX
+## Running Fibercoin
 
-# Fetch the source and verify that it is not tampered with
-wget 'http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz'
-echo '12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db-4.8.30.NC.tar.gz' | sha256sum -c
-# -> db-4.8.30.NC.tar.gz: OK
-tar -xzvf db-4.8.30.NC.tar.gz
+Run the Qt wallet:
 
-# Build the library and install to our prefix
-cd db-4.8.30.NC/build_unix/
-#  Note: Do a static build so that it can be embedded into the exectuable, instead of having to find a .so at runtime
-../dist/configure --enable-cxx --disable-shared --with-pic --prefix=$BDB_PREFIX
-make install
+    ./src/qt/fibercoin-qt
 
-# Configure Fibercoin to use our own-built instance of BDB
-cd $BITCOINGREEN_ROOT
-./configure (other args...) LDFLAGS="-L${BDB_PREFIX}/lib/" CPPFLAGS="-I${BDB_PREFIX}/include/"
-```
+Run the daemon:
 
-**Note**: You only need Berkeley DB if the wallet is enabled (see the section *Disable-Wallet mode* below).
+    ./src/fibercoind -daemon
 
-Boost
------
-If you need to build Boost yourself:
+Check the running daemon:
 
-	sudo su
-	./bootstrap.sh
-	./bjam install
+    ./src/fibercoin-cli getinfo
 
+The default Linux data directory is:
 
-Security
---------
-To help make your Fibercoin installation more secure by making certain attacks impossible to
-exploit even if a vulnerability is found, binaries are hardened by default.
-This can be disabled with:
+    ~/.fibercoin
 
-Hardening Flags:
+RPC cookie authentication is used automatically when an explicit RPC password is not configured.
 
-	./configure --enable-hardening
-	./configure --disable-hardening
+## Tests
 
+The current Ubuntu release workflow builds with:
 
-Hardening enables the following features:
+    --disable-tests
 
-* Position Independent Executable
-    Build position independent code to take advantage of Address Space Layout Randomization
-    offered by some kernels. An attacker who is able to cause execution of code at an arbitrary
-    memory location is thwarted if he doesn't know where anything useful is located.
-    The stack and heap are randomly located by default but this allows the code section to be
-    randomly located as well.
+For development builds, enable tests explicitly:
 
-    On an Amd64 processor where a library was not compiled with -fPIC, this will cause an error
-    such as: "relocation R_X86_64_32 against `......' can not be used when making a shared object;"
+    CPPFLAGS="-I$BDB_PREFIX/include" \
+    LDFLAGS="-L$BDB_PREFIX/lib" \
+    ./configure \
+      --enable-tests \
+      --with-gui=qt5 \
+      --with-miniupnpc
 
-    To test that you have built PIE executable, install scanelf, part of paxutils, and use:
+Then run:
 
-    	scanelf -e ./fibercoind
+    make check
 
-    The output should contain:
-     TYPE
-    ET_DYN
+See:
 
-* Non-executable Stack
-    If the stack is executable then trivial stack based buffer overflow exploits are possible if
-    vulnerable buffers are found. By default, fibercoin should be built with a non-executable stack
-    but if one of the libraries it uses asks for an executable stack or someone makes a mistake
-    and uses a compiler extension which requires an executable stack, it will silently build an
-    executable without the non-executable stack protection.
+    doc/unit-tests.md
 
-    To verify that the stack is non-executable after compiling use:
-    `scanelf -e ./fibercoind`
+## Headless build
 
-    the output should contain:
-	STK/REL/PTL
-	RW- R-- RW-
+To build without the Qt GUI:
 
-    The STK RW- means that the stack is readable and writeable but not executable.
+    CPPFLAGS="-I$BDB_PREFIX/include" \
+    LDFLAGS="-L$BDB_PREFIX/lib" \
+    ./configure \
+      --disable-tests \
+      --without-gui \
+      --with-miniupnpc
+
+Then:
+
+    make -j"$(nproc)"
+
+This is useful for servers and masternodes that only require `fibercoind` and command-line tools.
+
+## Optional features
+
+### MiniUPnPc
+
+MiniUPnPc provides UPnP support.
+
+It can be disabled with:
+
+    ./configure --without-miniupnpc
+
+### ZeroMQ
+
+ZeroMQ support is available when `libzmq3-dev` is installed.
+
+It can be disabled with:
+
+    ./configure --disable-zmq
+
+See:
+
+    doc/zmq.md
+
+### QR codes
+
+The Qt wallet uses `libqrencode` for QR-code support.
+
+Install:
+
+    libqrencode-dev
+
+before configuring the GUI build.
+
+## Release packaging
+
+The current Ubuntu release workflow creates a package containing:
+
+    fibercoin-qt
+    bin/fibercoind
+    bin/fibercoin-cli
+    bin/fibercoin-tx
+
+The release binaries are stripped using:
+
+    strip --strip-unneeded
+
+The workflow audits runtime library dependencies with:
+
+    ldd
+
+and rejects packages with missing libraries.
+
+## Version smoke tests
+
+The release workflow verifies:
+
+    fibercoind --version
+    fibercoin-cli --version
+    fibercoin-tx -?
+    fibercoin-qt --version
+
+For v2.0.2.6, the expected version is:
+
+    2.0.2.6
+
+## Release archive
+
+The current Ubuntu workflow creates:
+
+    Fibercoin-2.0.2.6-Ubuntu-24.04-x86_64.tar.gz
+
+and a SHA-256 checksum file:
+
+    Fibercoin-2.0.2.6-Ubuntu-24.04-x86_64.tar.gz.sha256
+
+## Security
+
+Fibercoin enables build hardening where supported by the compiler and platform.
+
+Do not disable hardening for release builds unless there is a specific compatibility reason and the resulting binaries have been reviewed.
+
+For server deployments:
+
+- run `fibercoind` under a dedicated non-root user
+- restrict RPC access
+- protect wallet and configuration files
+- expose the P2P port only when inbound connectivity is required
+- keep the operating system and dependencies updated
+
+## Current release environments
+
+The active Fibercoin Linux release workflows are:
+
+    .github/workflows/ubuntu-18.04-build.yml
+    .github/workflows/ubuntu-build.yml
+    .github/workflows/ubuntu-26.04-build.yml
+
+These workflows are the authoritative references for the Ubuntu 18.04, Ubuntu 24.04, and Ubuntu 26.04 release builds.

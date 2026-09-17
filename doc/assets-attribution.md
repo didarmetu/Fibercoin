@@ -1,4 +1,4 @@
-The following is a list of assets used in the bitcoin source and their proper attribution.
+The following is a list of graphical assets used in the Fibercoin source and their proper attribution.
 
 [Wladimir van der Laan](https://github.com/laanwj)
 -----------------------
@@ -76,7 +76,7 @@ Everaldo (Everaldo Coelho)
 * Site: [http://findicons.com/icon/17102/reload?id=17102](http://findicons.com/icon/17102/reload?id=17102)
 
 ### Assets Used
-	scripts/img/reload.xcf (modified), src/qt/res/movies/*.png
+	src/qt/res/movies/*.png
 
 [Vignoni David](http://techbase.kde.org/Projects/Oxygen)
 -----------------------
@@ -98,6 +98,5 @@ Jonas Schnelli
 
 ### Assets Used
 	src/qt/res/icons/bitcoin.icns, src/qt/res/src/bitcoin.svg,
-	src/qt/res/src/bitcoin.ico, src/qt/res/src/bitcoin.png,
-	src/qt/res/src/bitcoin_testnet.png, doc/fibercoin_logo_doxygen.png,
+	doc/fibercoin_logo_doxygen.png,
 	src/qt/res/images/splash.png, src/qt/res/images/splash_testnet.png

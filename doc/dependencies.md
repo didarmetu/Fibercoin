@@ -1,45 +1,117 @@
-Dependencies
-============
+# Fibercoin Dependencies
 
-These are the dependencies currently used by Bitcoin Core. You can find instructions for installing them in the `build-*.md` file for your platform.
+Fibercoin Core requires several libraries for networking, wallet support, the Qt GUI, and optional features.
 
-| Dependency | Version used | Minimum required | CVEs | Shared | [Bundled Qt library](https://doc.qt.io/qt-5/configure-options.html#third-party-libraries) |
-| --- | --- | --- | --- | --- | --- |
-| Berkeley DB | [4.8.30](https://www.oracle.com/technetwork/database/database-technologies/berkeleydb/downloads/index.html) | 4.8.x | No |  |  |
-| Boost | [1.70.0](https://www.boost.org/users/download/) | [1.47.0](https://github.com/bitcoin/bitcoin/pull/8920) | No |  |  |
-| Clang |  | [3.3+](https://llvm.org/releases/download.html) (C++11 support) |  |  |  |
-| Expat | [2.2.7](https://libexpat.github.io/) |  | No | Yes |  |
-| fontconfig | [2.12.1](https://www.freedesktop.org/software/fontconfig/release/) |  | No | Yes |  |
-| FreeType | [2.7.1](https://download.savannah.gnu.org/releases/freetype) |  | No |  |  |
-| GCC |  | [4.8+](https://gcc.gnu.org/) (C++11 support) |  |  |  |
-| HarfBuzz-NG |  |  |  |  |  |
-| libevent | [2.1.8-stable](https://github.com/libevent/libevent/releases) | 2.0.22 | No |  |  |
-| libjpeg |  |  |  |  | [Yes](https://github.com/bitcoin/bitcoin/blob/master/depends/packages/qt.mk#L65) |
-| libpng |  |  |  |  | [Yes](https://github.com/bitcoin/bitcoin/blob/master/depends/packages/qt.mk#L64) |
-| librsvg | |  |  |  |  |
-| MiniUPnPc | [2.0.20180203](http://miniupnp.free.fr/files) |  | No |  |  |
-| OpenSSL | [1.0.1k](https://www.openssl.org/source) |  | Yes |  |  |
-| PCRE |  |  |  |  | [Yes](https://github.com/bitcoin/bitcoin/blob/master/depends/packages/qt.mk#L66) |
-| protobuf | [2.6.1](https://github.com/google/protobuf/releases) |  | No |  |  |
-| Python (tests) |  | [3.5](https://www.python.org/downloads) |  |  |  |
-| qrencode | [3.4.4](https://fukuchi.org/works/qrencode) |  | No |  |  |
-| Qt | [5.7.1](https://download.qt.io/official_releases/qt/) | [5.5.1](https://github.com/bitcoin/bitcoin/issues/13478) | No |  |  |
-| XCB |  |  |  |  | [Yes](https://github.com/bitcoin/bitcoin/blob/master/depends/packages/qt.mk#L87) (Linux only) |
-| xkbcommon |  |  |  |  | [Yes](https://github.com/bitcoin/bitcoin/blob/master/depends/packages/qt.mk#L86) (Linux only) |
-| ZeroMQ | [4.3.1](https://github.com/zeromq/libzmq/releases) | 4.0.0 | No |  |  |
-| zlib | [1.2.11](https://zlib.net/) |  |  |  | No |
+Exact dependency versions may vary by platform. The current GitHub Actions workflows and the `depends/` build system are the authoritative sources for release-build dependencies.
 
-Controlling dependencies
-------------------------
-Some dependencies are not needed in all configurations. The following are some factors that affect the dependency list.
+## Core dependencies
 
-#### Options passed to `./configure`
-* MiniUPnPc is not needed with  `--with-miniupnpc=no`.
-* Berkeley DB is not needed with `--disable-wallet`.
-* protobuf is not needed with `--disable-bip70`.
-* Qt is not needed with `--without-gui`.
-* If the qrencode dependency is absent, QR support won't be added. To force an error when that happens, pass `--with-qrencode`.
-* ZeroMQ is needed only with the `--with-zmq` option.
+### Boost
 
-#### Other
-* librsvg is only needed if you need to run `make deploy` on (cross-compilation to) macOS.
+Fibercoin uses Boost for filesystem, threading, networking, program options, chrono, and testing support.
+
+The build system requires a C++11-compatible Boost installation.
+
+### OpenSSL
+
+Fibercoin supports modern OpenSSL, including OpenSSL 3.
+
+OpenSSL provides cryptographic functionality used by the wallet, networking, and signature verification code.
+
+### libevent
+
+libevent is required for networking and event handling.
+
+### Berkeley DB
+
+Wallet builds use Berkeley DB **4.8** for wallet database compatibility.
+
+The Ubuntu and macOS release workflows build Berkeley DB 4.8.30.NC explicitly rather than relying on the operating system's default Berkeley DB version.
+
+Do not migrate an existing wallet to another Berkeley DB version without compatibility testing and backups.
+
+## GUI dependencies
+
+### Qt 5
+
+Fibercoin v2.0.2.6 uses Qt 5 for the graphical wallet.
+
+Qt 6 migration is not part of the v2.0.2.6 release.
+
+### protobuf
+
+Protocol Buffers is required by the Qt/payment-request components.
+
+The macOS release workflow currently builds protobuf **3.20.3** explicitly for C++11 compatibility.
+
+Other supported platforms may use their platform-provided protobuf package when compatible.
+
+### qrencode
+
+libqrencode provides QR-code support in the Qt wallet.
+
+QR-code support is enabled when Qt and libqrencode are available.
+
+## Optional dependencies
+
+### MiniUPnPc
+
+MiniUPnPc provides UPnP support.
+
+It can be disabled at configure time:
+
+    ./configure --without-miniupnpc
+
+### ZeroMQ
+
+ZeroMQ support is available for applications that use Fibercoin's ZMQ notification interface.
+
+It is not required for basic wallet or daemon operation.
+
+## Build tools
+
+Building Fibercoin from source normally requires:
+
+- a C++11-capable compiler
+- autoconf
+- automake
+- libtool
+- pkg-config
+- make
+- Python for selected build and test utilities
+
+Platform-specific packages and additional tools are documented in the corresponding build instructions and CI workflows.
+
+## Deterministic dependency builds
+
+Fibercoin includes a `depends/` system containing pinned recipes for dependencies used by deterministic and cross-platform builds.
+
+Important package recipes include:
+
+    depends/packages/boost.mk
+    depends/packages/openssl.mk
+    depends/packages/libevent.mk
+    depends/packages/bdb.mk
+    depends/packages/miniupnpc.mk
+    depends/packages/protobuf.mk
+    depends/packages/qrencode.mk
+    depends/packages/qt.mk
+    depends/packages/zeromq.mk
+
+The versions used by `depends/` may differ from native system packages used by GitHub Actions.
+
+## Release build environments
+
+Fibercoin currently maintains release workflows for:
+
+- Ubuntu 24.04 x86-64
+- Windows 11 x86-64
+- macOS
+
+Release builders should follow the repository's current CI workflows rather than relying on old dependency-version tables.
+
+## Dependency modernization
+
+Some dependencies are intentionally retained for compatibility with the existing Fibercoin codebase and wallet format.
+
+Major dependency migrations, including Qt 6 and broader protobuf modernization, should be handled separately from maintenance releases and tested across all supported platforms.

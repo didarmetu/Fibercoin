@@ -1,63 +1,83 @@
-Fibercoin
-=====================
+# Fibercoin Documentation
 
-Setup
----------------------
-[Fibercoin](https://fibercoin.tk/) is the original Fibercoin client and it builds the backbone of the network. However, it downloads and stores the entire history of Fibercoin transactions; depending on the speed of your computer and network connection, the synchronization process can take anywhere from a few hours to a day or more. Thankfully you only have to do this once.
+This directory contains user, operator, developer, build, and release documentation for Fibercoin Core.
 
-Running
----------------------
-The following are some helpful notes on how to run Fibercoin on your native platform.
+For the main project overview, see the repository root `README.md`.
 
-### Unix
+## Getting Started
 
-Unpack the files into a directory and run:
+- [Blockchain Bootstrap](bootstrap.md) - Import trusted historical block data to speed up initial synchronization.
+- [Data Directory and Files](files.md) - Reference for Fibercoin wallet, blockchain, network, and runtime files.
+- [Tor Support](tor.md) - Configure Fibercoin to use a Tor SOCKS5 proxy.
 
-- bin/32/fibercoin-qt (GUI, 32-bit) or bin/32/fibercoind (headless, 32-bit)
-- bin/64/fibercoin-qt (GUI, 64-bit) or bin/64/fibercoind (headless, 64-bit)
+## Masternodes
+
+- [Masternode Configuration](masternode_conf.md) - Configure `masternode.conf` and manage Fibercoin masternodes.
+- [Masternode Start-Many Guide](masternode-start-many.md) - Configure and start multiple masternodes from a controller wallet.
+- [Masternode Budget System](masternode-budget.md) - Reference for the legacy Fibercoin budget subsystem.
+
+## Network and Interfaces
+
+- [SwiftTX](swifttx.md) - Fibercoin transaction-locking functionality.
+- [ZeroMQ Notifications](zmq.md) - Subscribe to block, transaction, and SwiftTX events.
+- [Unauthenticated REST Interface](REST-interface.md) - REST interface documentation.
+- [DNS Seed Policy](dnsseed-policy.md) - Requirements and policy for Fibercoin DNS seed operators.
+
+## Building Fibercoin
+
+- [macOS Build Notes](build-osx.md)
+- [Unix Build Notes](build-unix.md)
+- [Dependencies](dependencies.md)
+- [Gitian Building Guide](gitian-building.md)
+
+## Running Servers
+
+- [Running fibercoind as a System Service](init.md) - Run Fibercoin as a background service on a Linux server or VPS.
+
+## Development
+
+- [Developer Notes](developer-notes.md)
+- [Translation Process](translation_process.md)
+- [Unit Tests](unit-tests.md)
+
+Source-code documentation can be generated locally with Doxygen:
+
+    doxygen doc/Doxyfile
+
+## Releases
+
+- [Fibercoin Core v2.0.2.6 Release Notes](release-notes-2.0.2.6.md)
+- [Release Process](release-process.md)
+
+## Additional Documentation
+
+- [Assets Attribution](assets-attribution.md)
+
+## Platform Notes
 
 ### Windows
 
-Unpack the files into a directory, and then run fibercoin-qt.exe.
+Fibercoin release packages provide the Fibercoin Qt wallet and command-line applications for supported Windows systems.
 
-### OSX
+### macOS
 
-Drag Fibercoin-Qt to your applications folder, and then run Fibercoin-Qt.
+Install Fibercoin from the macOS release package and launch Fibercoin-Qt normally.
 
-### Need Help?
+### Linux and Unix
 
-* Join our Discord server [Discord Server](https://discordapp.com/invite/9nzt37V)
+Fibercoin can run as the Qt wallet or as the headless `fibercoind` daemon.
 
-Building
----------------------
-The following are developer notes on how to build Fibercoin on your native platform. They are not complete guides, but include notes on the necessary libraries, compile flags, etc.
+See the [Unix Build Notes](build-unix.md) for source builds and the [system service guide](init.md) for server deployments.
 
-- [OSX Build Notes](build-osx.md)
-- [Unix Build Notes](build-unix.md)
-- [Gitian Building Guide](gitian-building.md)
+## Community and Resources
 
-Development
----------------------
-The Fibercoin repo's [root README](https://github.com/didarmetu/Fibercoin/blob/master/README.md) contains relevant information on the development process and automated testing.
+- [Fibercoin Website](https://fibercoin.info/) - Official Fibercoin website with project information and resources.
+- [Fibercoin Block Explorer](https://explorer.fibercoin.info/) - Official blockchain explorer for checking blocks, transactions, addresses, and network activity.
+- [Fiberchange](https://fiberchange.com/) - Fibercoin exchange for trading FBC.
+- [Fibercoin Discord](https://discord.gg/hUvXmJj) - Community server for Fibercoin discussions, support, and project updates.
 
-- [Developer Notes](developer-notes.md)
-- [Multiwallet Qt Development](multiwallet-qt.md)
-- [Release Notes](release-notes.md)
-- [Release Process](release-process.md)
-- [Source Code Documentation (External Link)](https://dev.visucore.com/bitcoin/doxygen/) ***TODO***
-- [Translation Process](translation_process.md)
-- [Unit Tests](unit-tests.md)
-- [Unauthenticated REST Interface](REST-interface.md)
-- [Dnsseed Policy](dnsseed-policy.md)
+## License
 
-### Miscellaneous
-- [Assets Attribution](assets-attribution.md)
-- [Files](files.md)
-- [Tor Support](tor.md)
-- [Init Scripts (systemd/upstart/openrc)](init.md)
+Fibercoin Core is distributed under the MIT software license.
 
-License
----------------------
-Distributed under the [MIT/X11 software license](http://www.opensource.org/licenses/mit-license.php).
-This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](https://www.openssl.org/). This product includes
-cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.
+See the repository `COPYING` file for the complete license terms.

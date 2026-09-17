@@ -1,58 +1,90 @@
-##SwiftTX Technical Information
+# Fibercoin SwiftTX
 
-SwiftTX has been integrated into the Core Daemon in two ways:
-* "push" notifications (ZMQ and `-swifttxnotify` cmd-line/config option);
-* RPC commands.
+SwiftTX provides transaction locking through the Fibercoin masternode network.
 
-####ZMQ
+A successfully locked transaction can be treated by wallet RPCs as having additional confirmation depth before normal blockchain confirmations accumulate.
 
-When a "Transaction Lock" occurs the hash of the related transaction is broadcasted through ZMQ using both the `zmqpubrawtxlock` and `zmqpubhashtxlock` channels.
+## SwiftTX depth
 
-* `zmqpubrawtxlock`: publishes the raw transaction when locked via SwiftTX
-* `zmqpubhashtxlock`: publishes the transaction hash when locked via SwiftTX
+The default SwiftTX confirmation depth is:
 
-This mechanism has been integrated into Bitcore-Node-Fibercoin which allows for notification to be broadcast through Insight API in one of two ways:
-* WebSocket: [https://github.com/fibercoin/insight-api-fibercoin#web-socket-api](https://github.com/fibercoin/insight-api-fibercoin#web-socket-api)
-* API: [https://github.com/fibercoin/insight-api-fibercoin#swifttx-transactions](https://github.com/fibercoin/insight-api-fibercoin#swifttx-transactions)
+    5
 
-####Command line option
+It can be configured with:
 
-When a wallet SwiftTX transaction is successfully locked a shell command provided in this option is executed (`%s` in `<cmd>` is replaced by TxID):
+    -swifttxdepth=<n>
 
-```
--swifttxnotify=<cmd>
-```
+Fibercoin currently limits this value to the range `0` through `60`.
 
-####RPC
+If SwiftTX is disabled, the SwiftTX confirmation depth is set to zero.
 
-Details pertaining to an observed "Transaction Lock" can also be retrieved through RPC, it’s important however to understand the underlying mechanism.
+## RPC confirmations
 
-By default, the Fibercoin daemon will launch using the following constant:
+Wallet RPC results can contain both:
 
-```
-static const int DEFAULT_SWIFTTX_DEPTH = 5;
-```
+    confirmations
+    bcconfirmations
 
-This value can be overridden by passing the following argument to the Fibercoin daemon:
+For a successfully locked SwiftTX transaction, `confirmations` includes the configured SwiftTX depth in addition to blockchain confirmations.
 
-```
--swifttxdepth=<n>
-```
+`bcconfirmations` reports only actual blockchain confirmations.
 
-The key thing to understand is that this value indicates the number of "confirmations" a successful Transaction Lock represents. When Wallet RPC commands are performed (such as `listsinceblock`) this attribute is taken into account when returning information about the transaction. The value in `confirmations` field you see through RPC is showing the number of `"Blockchain Confirmations" + "SwiftTX Depth"` (assuming the funds were sent via SwiftTX).
+With the default SwiftTX depth of 5:
 
-There is also a field named `bcconfirmations`. The value in this field represents the total number of `"Blockchain Confirmations"` for a given transaction without taking into account whether it was SwiftTX or not.
+### Newly locked SwiftTX transaction
 
-**Examples**
-* SwiftTX transaction just occurred:
-    * confirmations: 5
-    * bcconfirmations: 0
-* SwiftTX transaction received one confirmation from blockchain:
-    * confirmations: 6
-    * bcconfirmations: 1
-* non-SwiftTX transaction just occurred:
-    * confirmations: 0
-    * bcconfirmations: 0
-* non-SwiftTX transaction received one confirmation from blockchain:
-    * confirmations: 1
-    * bcconfirmations: 1
+    confirmations: 5
+    bcconfirmations: 0
+
+### SwiftTX transaction with one blockchain confirmation
+
+    confirmations: 6
+    bcconfirmations: 1
+
+### Normal transaction with no blockchain confirmations
+
+    confirmations: 0
+    bcconfirmations: 0
+
+### Normal transaction with one blockchain confirmation
+
+    confirmations: 1
+    bcconfirmations: 1
+
+## ZMQ notifications
+
+Fibercoin can publish SwiftTX transaction-lock notifications through ZeroMQ.
+
+Publish the transaction hash when a SwiftTX lock is completed:
+
+    -zmqpubhashtxlock=<address>
+
+Publish the raw locked transaction:
+
+    -zmqpubrawtxlock=<address>
+
+These options require Fibercoin to be built with ZeroMQ support.
+
+## Network operation
+
+SwiftTX uses transaction-lock requests and masternode consensus votes.
+
+The related network message types include transaction-lock requests and transaction-lock votes.
+
+SwiftTX behavior can also depend on the current network spork state.
+
+Check the current spork values with:
+
+    fibercoin-cli spork show
+
+and their active state with:
+
+    fibercoin-cli spork active
+
+## Configuration
+
+SwiftTX-related options can be supplied on the command line or in `fibercoin.conf`.
+
+Use the current executable help output to see the options supported by your build:
+
+    fibercoind --help

@@ -33,7 +33,7 @@ Once you've got the right hardware and software:
     # Get inputs (see doc/release-process.md for exact inputs needed and where to get them)
     ...
 
-    # For further build instructions see doc/release-notes.md
+    # For Gitian build background and current status see doc/gitian-building.md
     ...
 
 ---------------------

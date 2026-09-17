@@ -1,121 +1,251 @@
-Mac OS X Build Instructions and Notes
-====================================
-This guide will show you how to build fibercoind (headless client) for OSX.
+# Fibercoin macOS Build Guide
 
-Notes
------
+This guide describes the current macOS build environment for Fibercoin Core.
 
-* Tested on OS X 10.7 through 10.10 on 64-bit Intel processors only.
+The release build process supports:
 
-* All of the commands should be executed in a Terminal application. The
-built-in one is located in `/Applications/Utilities`.
+- Apple Silicon (`arm64`)
+- Intel (`x86_64`)
 
-Preparation
------------
+The current release workflow builds on macOS 15.
 
-You need to install XCode with all the options checked so that the compiler
-and everything is available in /usr not just /Developer. XCode should be
-available on your OS X installation media, but if not, you can get the
-current version from https://developer.apple.com/xcode/. If you install
-Xcode 4.3 or later, you'll need to install its command line tools. This can
-be done in `Xcode > Preferences > Downloads > Components` and generally must
-be re-done or updated every time Xcode is updated.
+## Requirements
 
-There's also an assumption that you already have `git` installed. If
-not, it's the path of least resistance to install [Github for Mac](https://mac.github.com/)
-(OS X 10.7+) or
-[Git for OS X](https://code.google.com/p/git-osx-installer/). It is also
-available via Homebrew.
+Install Apple's Xcode Command Line Tools:
 
-You will also need to install [Homebrew](http://brew.sh) in order to install library
-dependencies.
+    xcode-select --install
 
-The installation of the actual dependencies is covered in the Instructions
-sections below.
+Install Homebrew if it is not already available.
 
-Instructions: Homebrew
-----------------------
+The build requires a C++11-capable compiler and the standard GNU/Autotools build tools.
 
-#### Install dependencies using Homebrew
+## Homebrew dependencies
 
-        brew install autoconf automake berkeley-db4 libtool boost miniupnpc openssl pkg-config protobuf qt5 libzmq
+Install the dependencies used by the current Fibercoin macOS build:
 
-### Building `fibercoind`
+    brew update
 
-1. Clone the github tree to get the source code and go into the directory.
+    brew install \
+      autoconf \
+      automake \
+      libtool \
+      pkg-config \
+      boost \
+      openssl@3 \
+      libevent \
+      zeromq \
+      miniupnpc \
+      qt@5 \
+      qrencode \
+      dylibbundler
 
-        git clone https://github.com/didarmetu/Fibercoin.git
-        cd fibercoin
+Fibercoin v2.0.2.6 uses Qt 5.
 
-2.  Build fibercoind:
+Qt 6 migration is a separate future modernization project.
 
-        ./autogen.sh
-        ./configure --with-gui=qt5
-        make
+## Protobuf
 
-3.  It is also a good idea to build and run the unit tests:
+The current macOS release build uses protobuf 3.20.3.
 
-        make check
+A known-compatible static protobuf build can be created with:
 
-4.  (Optional) You can also install fibercoind to your path:
+    PROTOBUF_VERSION="3.20.3"
+    PROTOBUF_PREFIX="$HOME/fibercoin-deps/protobuf"
 
-        make install
+    mkdir -p "$HOME/fibercoin-deps/src" "$PROTOBUF_PREFIX"
+    cd "$HOME/fibercoin-deps/src"
 
-Use Qt Creator as IDE
-------------------------
-You can use Qt Creator as IDE, for debugging and for manipulating forms, etc.
-Download Qt Creator from http://www.qt.io/download/. Download the "community edition" and only install Qt Creator (uncheck the rest during the installation process).
+    curl --location --fail \
+      --output "protobuf-cpp-${PROTOBUF_VERSION}.tar.gz" \
+      "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-cpp-${PROTOBUF_VERSION}.tar.gz"
 
-1. Make sure you installed everything through homebrew mentioned above
-2. Do a proper ./configure --with-gui=qt5 --enable-debug
-3. In Qt Creator do "New Project" -> Import Project -> Import Existing Project
-4. Enter "fibercoin-qt" as project name, enter src/qt as location
-5. Leave the file selection as it is
-6. Confirm the "summary page"
-7. In the "Projects" tab select "Manage Kits..."
-8. Select the default "Desktop" kit and select "Clang (x86 64bit in /usr/bin)" as compiler
-9. Select LLDB as debugger (you might need to set the path to your installtion)
-10. Start debugging with Qt Creator
+    tar -xzf "protobuf-cpp-${PROTOBUF_VERSION}.tar.gz"
+    cd "protobuf-${PROTOBUF_VERSION}"
 
-Creating a release build
-------------------------
-You can ignore this section if you are building `fibercoind` for your own use.
+    ./configure \
+      --prefix="$PROTOBUF_PREFIX" \
+      --disable-shared \
+      --enable-static \
+      CXXFLAGS="-std=c++11"
 
-fibercoind/fibercoin-cli binaries are not included in the Fibercoin-Qt.app bundle.
+    make -j"$(sysctl -n hw.logicalcpu)"
+    make install
 
-If you are building `fibercoind` or `fibercoin-qt` for others, your build machine should be set up
-as follows for maximum compatibility:
+## Berkeley DB 4.8
 
-All dependencies should be compiled with these flags:
+Fibercoin wallet compatibility uses Berkeley DB 4.8.30.NC.
 
- -mmacosx-version-min=10.7
- -arch x86_64
- -isysroot $(xcode-select --print-path)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk
+The current macOS build applies compatibility changes required by modern Apple compilers.
 
-Once dependencies are compiled, see release-process.md for how the Fibercoin-Qt.app
-bundle is packaged and signed to create the .dmg disk image that is distributed.
+Set a local installation prefix:
 
-Running
--------
+    BDB_PREFIX="$HOME/fibercoin-deps/bdb48"
 
-It's now available at `./fibercoind`, provided that you are still in the `src`
-directory. We have to first create the RPC configuration file, though.
+Download and verify Berkeley DB:
 
-Run `./fibercoind` to get the filename where it should be put, or just try these
-commands:
+    mkdir -p "$HOME/fibercoin-deps/src" "$BDB_PREFIX"
+    cd "$HOME/fibercoin-deps/src"
 
-    echo -e "rpcuser=fibercoinrpc\nrpcpassword=$(xxd -l 16 -p /dev/urandom)" > "/Users/${USER}/Library/Application Support/Fibercoin/fibercoin.conf"
-    chmod 600 "/Users/${USER}/Library/Application Support/Fibercoin/fibercoin.conf"
+    curl --location --fail \
+      --output db-4.8.30.NC.tar.gz \
+      https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
 
-The next time you run it, it will start downloading the blockchain, but it won't
-output anything while it's doing this. This process may take several hours;
-you can monitor its process by looking at the debug.log file, like this:
+    echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db-4.8.30.NC.tar.gz" \
+      | shasum -a 256 -c -
 
-    tail -f $HOME/Library/Application\ Support/Fibercoin/debug.log
+Extract it:
 
-Other commands:
--------
+    tar -xzf db-4.8.30.NC.tar.gz
+    cd db-4.8.30.NC
 
-    ./fibercoind -daemon # to start the fibercoin daemon.
-    ./fibercoin-cli --help  # for a list of command-line options.
-    ./fibercoin-cli help    # When the daemon is running, to get a list of RPC commands
+Apply the compatibility changes:
+
+    sed -i.bak \
+      's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' \
+      dbinc/atomic.h
+
+    sed -i.bak \
+      's/atomic_init/atomic_init_db/g' \
+      dbinc/atomic.h \
+      mp/mp_region.c \
+      mp/mp_mvcc.c \
+      mp/mp_fget.c \
+      mutex/mut_method.c \
+      mutex/mut_tas.c
+
+Build Berkeley DB:
+
+    cd build_unix
+
+    CFLAGS="-Wno-error=implicit-function-declaration" \
+      ../dist/configure \
+      --prefix="$BDB_PREFIX" \
+      --enable-cxx \
+      --disable-shared \
+      --disable-replication
+
+    make -j"$(sysctl -n hw.logicalcpu)"
+    make install
+
+## Configure the build environment
+
+Return to the Fibercoin source directory.
+
+Set the dependency paths:
+
+    BREW_PREFIX="$(brew --prefix)"
+    QT_PREFIX="$(brew --prefix qt@5)"
+    OPENSSL_PREFIX="$(brew --prefix openssl@3)"
+    PROTOBUF_PREFIX="$HOME/fibercoin-deps/protobuf"
+    BDB_PREFIX="$HOME/fibercoin-deps/bdb48"
+
+    export PATH="$QT_PREFIX/bin:$PROTOBUF_PREFIX/bin:$PATH"
+
+    export CPPFLAGS="-I$PROTOBUF_PREFIX/include -I$OPENSSL_PREFIX/include -I$BDB_PREFIX/include -I$BREW_PREFIX/include"
+
+    export LDFLAGS="-L$PROTOBUF_PREFIX/lib -L$OPENSSL_PREFIX/lib -L$BDB_PREFIX/lib -L$BREW_PREFIX/lib"
+
+    export PKG_CONFIG_PATH="$QT_PREFIX/lib/pkgconfig:$OPENSSL_PREFIX/lib/pkgconfig:$PROTOBUF_PREFIX/lib/pkgconfig:$BREW_PREFIX/lib/pkgconfig"
+
+For builds matching the current release workflow:
+
+    export MACOSX_DEPLOYMENT_TARGET=15.0
+
+## Build Fibercoin
+
+Generate the build system:
+
+    ./autogen.sh
+
+Configure:
+
+    ./configure \
+      --disable-tests \
+      --with-gui=qt5 \
+      --with-qtdbus=no \
+      --with-boost="$(brew --prefix boost)" \
+      --with-boost-libdir="$(brew --prefix boost)/lib" \
+      --with-miniupnpc
+
+Compile:
+
+    make -j"$(sysctl -n hw.logicalcpu)"
+
+The primary binaries are:
+
+    src/fibercoind
+    src/fibercoin-cli
+    src/fibercoin-tx
+    src/qt/fibercoin-qt
+
+## Running Fibercoin
+
+Run the Qt wallet:
+
+    ./src/qt/fibercoin-qt
+
+Run the daemon:
+
+    ./src/fibercoind -daemon
+
+Use the command-line client:
+
+    ./src/fibercoin-cli getinfo
+
+The default macOS data directory is:
+
+    ~/Library/Application Support/Fibercoin
+
+RPC cookie authentication is used automatically when an explicit RPC password is not configured.
+
+## Tests
+
+The current macOS release workflow builds with:
+
+    --disable-tests
+
+For development builds, tests can be enabled separately:
+
+    ./configure --enable-tests ...
+
+and run with:
+
+    make check
+
+See:
+
+    doc/unit-tests.md
+
+## Portable macOS packages
+
+The release workflow builds separate `arm64` and `x86_64` packages.
+
+The Qt application bundle contains:
+
+    Fibercoin-Qt.app
+
+Command-line binaries are packaged separately under:
+
+    bin/fibercoind
+    bin/fibercoin-cli
+    bin/fibercoin-tx
+
+Qt frameworks and other dynamic libraries are bundled into the release package so the final application does not depend on Homebrew paths on the destination computer.
+
+The release workflow audits Mach-O dependencies with `otool` and rejects packages that still reference Homebrew installation paths.
+
+## Universal builds
+
+The release workflow combines the separately built Apple Silicon and Intel packages into a portable universal macOS package.
+
+Local developers normally do not need to reproduce the universal packaging process manually.
+
+For the exact release packaging procedure, see:
+
+    .github/workflows/macos-build.yml
+
+## Platform support
+
+Fibercoin v2.0.2.6 currently targets macOS 15 for its release workflow.
+
+Intel macOS support depends on the availability of a compatible Intel build environment and should be reviewed separately for future releases.

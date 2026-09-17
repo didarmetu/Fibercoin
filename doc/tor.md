@@ -1,117 +1,189 @@
-TOR SUPPORT IN Fibercoin
-============================
+# Fibercoin Tor Support
 
-It is possible to run Fibercoin as a Tor hidden service, and connect to such services.
+Fibercoin can route network connections through a Tor SOCKS5 proxy.
 
-The following directions assume you have a Tor proxy running on port 9050. Many
-distributions default to having a SOCKS proxy listening on port 9050, but others
-may not. In particular, the Tor Browser Bundle defaults to listening on a random
-port. See [Tor Project FAQ:TBBSocksPort](https://www.torproject.org/docs/faq.html.en#TBBSocksPort)
-for how to properly configure Tor.
+Fibercoin Core v2.0.2.6 also contains legacy Tor onion-service support. However, the current networking implementation uses the obsolete Tor v2 onion-address format and should not be relied upon for modern Tor onion services.
 
+## Using Tor as a SOCKS5 proxy
 
-Run Fibercoin behind a Tor proxy
-------------------------------------
+Run a Tor SOCKS5 proxy locally. A common Tor SOCKS port is:
 
-The first step is running Fibercoin behind a Tor proxy. This will already make all
-outgoing connections be anonymized, but more is possible.
-```
--proxy=ip:port  Set the proxy server. If SOCKS5 is selected (default), this proxy
-                server will be used to try to reach .onion addresses as well.
+    127.0.0.1:9050
 
--onion=ip:port  Set the proxy server to use for tor hidden services. You do not
-                need to set this if it's the same as -proxy. You can use -noonion
-                to explicitly disable access to hidden service.
+Then start Fibercoin with:
 
--listen         When using -proxy, listening is disabled by default. If you want
-                to run a hidden service (see next section), you'll need to enable
-                it explicitly.
+    fibercoind -proxy=127.0.0.1:9050
 
--connect=X      When behind a Tor proxy, you can specify .onion addresses instead
--addnode=X      of IP addresses or hostnames in these parameters. It requires
--seednode=X     SOCKS5. In Tor mode, such addresses can also be exchanged with
-                other P2P nodes.
+The equivalent `fibercoin.conf` setting is:
 
--onlynet=tor    Only connect to .onion nodes and drop IPv4/6 connections.
-```
+    proxy=127.0.0.1:9050
 
-An example how to start the client if the Tor proxy is running on local host on
-port 9050 and only allows .onion nodes to connect:
-```
-./fibercoind -onion=127.0.0.1:9050 -onlynet=tor -listen=0 -addnode=dnetzj6l4cvo2fxy.onion:989
-```
+When a proxy is configured, Fibercoin disables listening and local address discovery by default for privacy unless explicitly enabled.
 
-In a typical situation, this suffices to run behind a Tor proxy:
-```
-./fibercoind -proxy=127.0.0.1:9050
-```
+## Using Tor with Fibercoin-Qt
 
-Run a Fibercoin hidden server
-----------------------------------
+The Fibercoin Qt wallet can use the same Tor SOCKS5 proxy.
 
-If you configure your Tor system accordingly, it is possible to make your node also
-reachable from the Tor network. Add these lines to your /etc/tor/torrc (or equivalent
-config file):
-```
-ClientOnly 1
-SOCKSPort 9050
-SOCKSPolicy accept 127.0.0.1/8
-Log notice file /var/log/tor/notices.log
-ControlPort 9051
-HiddenServiceDir /var/lib/tor/dnet/
-HiddenServicePort 989 127.0.0.1:30114
-HiddenServiceStatistics 0
-ORPort 9001
-LongLivedPorts 989
-ExitPolicy reject *:*
-DisableDebuggerAttachment 0
-NumEntryGuards 8
-```
+Start Fibercoin-Qt with:
 
-The directory can be different of course, but (both) port numbers should be equal to
-your fibercoind's P2P listen port (30114 by default).
-```
--externalip=X   You can tell fibercoin about its publicly reachable address using
-                this option, and this can be a .onion address. Given the above
-                configuration, you can find your onion address in
-                /var/lib/tor/fibercoin-service/hostname. Onion addresses are given
-                preference for your node to advertize itself with, for connections
-                coming from unroutable addresses (such as 127.0.0.1, where the
-                Tor proxy typically runs).
+    fibercoin-qt -proxy=127.0.0.1:9050
 
--listen         You'll need to enable listening for incoming connections, as this
-                is off by default behind a proxy.
+On macOS, when using the application bundle directly:
 
--discover       When -externalip is specified, no attempt is made to discover local
-                IPv4 or IPv6 addresses. If you want to run a dual stack, reachable
-                from both Tor and IPv4 (or IPv6), you'll need to either pass your
-                other addresses using -externalip, or explicitly enable -discover.
-                Note that both addresses of a dual-stack system may be easily
-                linkable using traffic analysis.
-```
+    /Applications/Fibercoin-Qt.app/Contents/MacOS/Fibercoin-Qt -proxy=127.0.0.1:9050
 
-In a typical situation, where you're only reachable via Tor, this should suffice:
-```
-./fibercoind -proxy=127.0.0.1:9050 -externalip=dnetzj6l4cvo2fxy.onion:989 -listen
-```
+To make the proxy configuration persistent, add the following line to `fibercoin.conf`:
 
-(obviously, replace the Onion address with your own). If you don't care too much
-about hiding your node, and want to be reachable on IPv4 as well, additionally
-specify:
-```
-./fibercoind ... -discover
-```
+    proxy=127.0.0.1:9050
 
-and open port 30114 on your firewall (or use -upnp).
+The default configuration file locations are:
 
-If you only want to use Tor to reach onion addresses, but not use it as a proxy
-for normal IPv4/IPv6 communication, use:
-```
-./fibercoind -onion=127.0.0.1:9050 -externalip=dnetzj6l4cvo2fxy.onion:989 -discover
-```
+### Windows
 
-List of known Fibercoin Tor relays
-------------------------------------
-```
-***TODO***
-```
+    %APPDATA%\Fibercoin\fibercoin.conf
+
+### macOS
+
+    ~/Library/Application Support/Fibercoin/fibercoin.conf
+
+### Linux
+
+    ~/.fibercoin/fibercoin.conf
+
+When `proxy` is configured, Fibercoin normally disables incoming listening and local address discovery automatically for privacy.
+
+There is normally no need to add `onlynet=onion`. Fibercoin v2.0.2.6 has legacy direct onion-address support, so the recommended configuration for normal use is simply:
+
+    proxy=127.0.0.1:9050
+
+Make sure the Tor SOCKS5 proxy is running before starting Fibercoin.
+
+## Tor-only outbound connections
+
+Fibercoin recognizes both `tor` and `onion` as Tor network names.
+
+To restrict outbound connections to the Tor network:
+
+    fibercoind -proxy=127.0.0.1:9050 -onlynet=onion
+
+However, direct `.onion` peer connectivity in Fibercoin v2.0.2.6 is limited by the legacy onion-address implementation described below.
+
+## Separate Tor proxy
+
+A separate SOCKS5 proxy can be configured for onion destinations:
+
+    -onion=<ip:port>
+
+Example:
+
+    fibercoind -onion=127.0.0.1:9050
+
+If `-onion` is not specified, Fibercoin normally uses the proxy configured with `-proxy`.
+
+Onion connectivity can be disabled with:
+
+    -noonion
+
+or:
+
+    -onion=0
+
+## Listening and privacy
+
+When `-proxy` is used, Fibercoin disables incoming listening by default.
+
+Listening can be explicitly enabled with:
+
+    -listen=1
+
+Address discovery can be controlled with:
+
+    -discover
+
+A public address can be specified with:
+
+    -externalip=<address>
+
+Be aware that enabling listening or address discovery while using Tor can reduce privacy.
+
+## Fibercoin network port
+
+The default Fibercoin mainnet P2P port is:
+
+    30114
+
+The testnet P2P port is:
+
+    16942
+
+## Legacy onion-service support
+
+Fibercoin contains Tor control support using:
+
+    -listenonion
+    -torcontrol=<ip:port>
+
+The implementation can authenticate with a Tor control port and issue `ADD_ONION` automatically.
+
+However, Fibercoin v2.0.2.6 represents onion addresses using the legacy Tor v2 format and requests legacy RSA1024 onion-service keys.
+
+Tor v2 onion services are obsolete and are not supported by the modern Tor network.
+
+For this reason, automatic Fibercoin onion-service creation and direct `.onion` peer operation should be considered legacy functionality in v2.0.2.6.
+
+Do not use old 16-character `.onion` addresses from historical Fibercoin documentation.
+
+## Modern Tor support
+
+Full modern onion-service support requires Fibercoin networking changes to support Tor v3 addresses.
+
+Until that work is completed and tested, Tor should primarily be used with Fibercoin as a SOCKS5 proxy for outbound IPv4/IPv6 connections.
+
+## Checking network state
+
+You can inspect Fibercoin's current network information with:
+
+    fibercoin-cli getnetworkinfo
+
+Check active peer connections with:
+
+    fibercoin-cli getpeerinfo
+
+## Verifying Tor proxy operation
+
+Before starting Fibercoin, verify that the Tor SOCKS5 proxy is listening:
+
+    nc -vz 127.0.0.1 9050
+
+A successful connection confirms that a local service is accepting connections on the configured proxy port.
+
+After starting Fibercoin, check the current network configuration:
+
+    fibercoin-cli getnetworkinfo
+
+When the proxy is active, the network entries should show:
+
+    "proxy": "127.0.0.1:9050"
+
+You can check active Fibercoin peer connections with:
+
+    fibercoin-cli getconnectioncount
+    fibercoin-cli getpeerinfo
+
+When using the proxy, normal wallet connections should normally appear as outbound connections.
+
+Tor connections may have higher latency and may take longer to establish than direct P2P connections.
+
+If Fibercoin shows zero connections, first confirm that the Tor SOCKS5 proxy is still running and listening on port 9050.
+
+## Security and privacy
+
+Tor can improve network privacy, but using a proxy alone does not make every aspect of wallet or node activity anonymous.
+
+For stronger privacy:
+
+- keep Tor updated
+- avoid exposing unnecessary listening ports
+- avoid publishing identifying node information
+- do not reuse sensitive RPC credentials
+- keep RPC interfaces restricted to trusted systems

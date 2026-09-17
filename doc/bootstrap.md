@@ -1,56 +1,118 @@
-### Bootstrap the Blockchain Synchronization
+# Fibercoin Blockchain Bootstrap
 
-Normally the Bitcoin client will download the transaction and network information, called the blockchain, from the network by syncing with the other clients. This process can take quite some time as the [Bitcoin blockchain](https://blockchain.info/charts/blocks-size) is growing bigger and bigger for each day. Luckily there is a safe and fast way to speed up this process. We'll show you how to bootstrap your blockchain to bring your client up to speed in just a few simple steps.
+Fibercoin normally synchronizes the blockchain directly from other Fibercoin nodes.
 
-### Requirements
+For a fresh installation, synchronization may take some time. Fibercoin can also import historical block data from a `bootstrap.dat` file before continuing normal network synchronization.
 
-- A fresh install of the Bitcoin client software.
+## Important
 
-### Download the blockchain via BitTorrent
+Only use a `bootstrap.dat` file from an official or trusted Fibercoin source.
 
-Jeff Garzik, Bitcoin Core developer, offers an [torrent file](https://bitcointalk.org/index.php?topic=145386.0) for bootstrapping purposes that is updated often. BitTorrent is a protocol that speeds up the downloading of large files by using the other clients in the network. Examples of free and safe open source clients are [Deluge](http://deluge-torrent.org/) or [qBittorrent](http://www.qbittorrent.org/). A guide to installing and configuring the torrent clients can be found [here](http://dev.deluge-torrent.org/wiki/UserGuide) for Deluge and [here](http://qbforums.shiki.hu/) for qBittorrent. A further in-depth tutorial on BitTorrent can be found [here](http://www.howtogeek.com/howto/31846/bittorrent-for-beginners-how-get-started-downloading-torrents/).
+The latest official Fibercoin bootstrap can be downloaded from:
 
-With the client installed we'll proceed to download the blockchain torrent file. Use the following magnet link:
+    https://github.com/didarmetu/Fibercoin/releases
 
-	magnet:?xt=urn:btih:2d4e6c1f96c5d5fb260dff92aea4e600227f1aea&dn=bootstrap.dat&tr=udp://tracker.openbittorrent.com:80&tr=udp://tracker.publicbt.com:80&tr=udp://tracker.ccc.de:80&tr=udp://tracker.istole.it:80
-	
- or go to [Jeff Garzik's topic](https://bitcointalk.org/index.php?topic=145386.0) for a signed magnet link. Alternatively you can use the [.torrent file](http://sourceforge.net/projects/bitcoin/files/Bitcoin/blockchain/bootstrap.dat.torrent/download) found on SourceForge.
-     
-![Fig1](img/bootstrap1.png)
+The official Fibercoin block explorer is available at:
 
-The download page should look like this, with a countdown to the download. If it does not work click the direct download link.
+    https://explorer.fibercoin.info/
 
-The torrent client installed will recognize the download of the torrent file. Save the bootstrap.dat file to the folder you use for downloads. The image below shows the torrent download in qBittorrent, with current speed and ETA highlighted.
+You can use the explorer to verify block heights and block hashes after importing the bootstrap. The latest `bootstrap.dat` is also available through the official Fibercoin explorer.
 
-![Fig2](img/bootstrap2.png)
+Do not use untrusted copies of:
 
-### Importing the blockchain
-Exit the Bitcoin client software if you have it running. Be sure not to have an actively used wallet in use. We are going to copy the download of the blockchain to the Bitcoin client data directory. You should run the client software at least once so it can generate the data directory. Copy the downloaded bootstrap.dat file into the Bitcoin data folder.
+- `wallet.dat`
+- `chainstate/`
+- `blocks/index/`
+- LevelDB database files
+- configuration files containing private keys or RPC credentials
 
-**For Windows users:**
-Open explorer, and type into the address bar:
+Fibercoin validates imported blocks before accepting them.
 
-	%APPDATA%\Bitcoin
-    
-This will open up the data folder. It should look like the image below. Copy over the bootstrap.dat from your download folder to this directory.
-![Fig4](img/bootstrap4.png)
+## Default Fibercoin data directories
 
-**For OSX users:**
-Open Finder by pressing Press [shift] + [cmd] + [g] and enter:
+### Windows
 
-	~/Library/Application Support/Bitcoin/
-    
-**For Linux users:**
-The directory is hidden in your User folder. Go to:
+    %APPDATA%\Fibercoin
 
-	~/.bitcoin/
-    
-### Importing the blockchain
-Now start the Bitcoin client software. It should show "Importing blocks from disk" like the image below. 
-![Fig5](img/bootstrap5.png)
+### macOS
 
-Wait until the import finishes. The client will download the last days not covered by the import. Congratulations you have successfully imported the blockchain!
+    ~/Library/Application Support/Fibercoin
 
-### Is this safe?
+### Linux
 
-Yes, the above method is safe. The download contains only raw blockchain data and the client verifies this on import. Do not download the blockchain from unofficial sources, especially if they provide `*.rev` and `*.sst` files. These files are not verified and can contain malicious edits.
+    ~/.fibercoin
+
+## Download and verify
+
+Download the latest official `bootstrap.dat` from:
+
+    https://github.com/didarmetu/Fibercoin/releases
+
+If a SHA-256 checksum is provided with the release, verify the downloaded file before importing it.
+
+On Linux:
+
+    sha256sum bootstrap.dat
+
+On macOS:
+
+    shasum -a 256 bootstrap.dat
+
+## Importing bootstrap.dat
+
+1. Shut down Fibercoin completely.
+2. Copy `bootstrap.dat` into the Fibercoin data directory.
+3. Start Fibercoin normally.
+4. Fibercoin will detect and import `bootstrap.dat`.
+5. After the import finishes, Fibercoin will continue synchronizing from the network.
+
+During import, the client may display:
+
+    Importing blocks from disk...
+
+After processing, Fibercoin renames the bootstrap file to:
+
+    bootstrap.dat.old
+
+## Importing another block file
+
+Fibercoin also supports importing an external block file explicitly:
+
+    fibercoind -loadblock=/path/to/blockfile.dat
+
+The same option can be passed when starting the Qt wallet.
+
+## Checking synchronization
+
+You can monitor synchronization with:
+
+    fibercoin-cli getblockcount
+    fibercoin-cli getbestblockhash
+    fibercoin-cli getconnectioncount
+
+For masternode operation, also check:
+
+    fibercoin-cli mnsync status
+
+Wait until blockchain and masternode synchronization are complete before relying on staking or masternode services.
+
+## Verification
+
+After importing historical blocks, Fibercoin continues normal block validation and network synchronization.
+
+Check your local node with:
+
+    fibercoin-cli getblockcount
+    fibercoin-cli getbestblockhash
+
+You can compare the block height and block hash with the official Fibercoin explorer:
+
+    https://explorer.fibercoin.info/
+
+For additional verification, compare the same block height against another trusted Fibercoin node.
+
+## Security
+
+A bootstrap file should contain raw block data only.
+
+Never download or replace wallet files, chainstate databases, or private configuration files from untrusted sources.

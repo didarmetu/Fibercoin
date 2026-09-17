@@ -1,60 +1,164 @@
-Translations
-============
+# Fibercoin Translation Process
 
-The Fibercoin project has been designed to support multiple localisations. This makes adding new phrases, and completely new languages easily achievable.
+Fibercoin supports multiple languages through the Qt translation system.
 
-### Writing code with translations
-We use automated scripts to help extract translations in both Qt, and non-Qt source files. It is rarely necessary to manually edit the files in `src/qt/locale/`. The translation source files must adhere to the following format:
-`fibercoin_xx_YY.ts or fibercoin_xx.ts`
+Translation source files are stored in:
 
-`src/qt/locale/fibercoin_en.ts` is treated in a special way. It is used as the source for all other translations. Whenever a string in the source code is changed, this file must be updated to reflect those changes. A custom script is used to extract strings from the non-Qt parts. This script makes use of `gettext`, so make sure that utility is installed (ie, `apt-get install gettext` on Ubuntu/Debian). Once this has been updated, `lupdate` (included in the Qt SDK) is used to update `fibercoin_en.ts`.
+    src/qt/locale/
 
-To automatically regenerate the `fibercoin_en.ts` file, run the following commands:
-```sh
-cd src/
-make translate
-```
+They use names such as:
 
-`contrib/fibercoin-qt.pro` takes care of generating `.qm` (binary compiled) files from `.ts` (source files) files. It’s mostly automated, and you shouldn’t need to worry about it.
+    fibercoin_en.ts
+    fibercoin_de.ts
+    fibercoin_es.ts
+    fibercoin_pt_BR.ts
 
-**Example Qt translation**
-```cpp
-QToolBar *toolbar = addToolBar(tr("Tabs toolbar"));
-```
+Compiled translation files use the `.qm` extension.
 
-### Creating a pull-request
-For general PRs, you shouldn’t include any updates to the translation source files. They will be updated periodically, primarily around pre-releases, allowing time for any new phrases to be translated before public releases. This is also important in avoiding translation related merge conflicts.
+## Translation source
 
-To create the pull-request, use the following commands:
-```
-git add src/qt/fibercoinstrings.cpp src/qt/locale/fibercoin_en.ts
-git commit
-```
+The primary English translation source is:
 
-### Handling Plurals (in source files)
-When new plurals are added to the source file, it's important to do the following steps:
+    src/qt/locale/fibercoin_en.ts
 
-1. Open `fibercoin_en.ts` in Qt Linguist (included in the Qt SDK)
-2. Search for `%n`, which will take you to the parts in the translation that use plurals
-3. Look for empty `English Translation (Singular)` and `English Translation (Plural)` fields
-4. Add the appropriate strings for the singular and plural form of the base string
-5. Mark the item as done (via the green arrow symbol in the toolbar)
-6. Repeat from step 2, until all singular and plural forms are in the source file
-7. Save the source file
+Strings from both Qt and non-Qt Fibercoin source code are collected into the translation system.
 
-### Translating a new language
-To create a new language template, you will need to edit the languages manifest file `src/qt/fibercoin_locale.qrc` and add a new entry. Below is an example of the English language entry.
+The generated non-Qt translation source is:
 
-```xml
-<qresource prefix="/translations">
-    <file alias="en">locale/fibercoin_en.qm</file>
-    ...
-</qresource>
-```
+    src/qt/fibercoinstrings.cpp
 
-**Note:** that the language translation file **must end in `.qm`** (the compiled extension), and not `.ts`.
+This file is generated from translatable strings in the Fibercoin core source.
 
-### Questions and general assistance
-[Fibercoin Discord](https://discord.gg/hUvXmJj).
+## Required tools
 
-Announcements will be posted during application pre-releases to notify translators to check for updates.
+Updating translations requires Qt translation tools, including:
+
+    lupdate
+    lrelease
+
+The translation extraction process also uses standard build tools and gettext where required.
+
+On Ubuntu or Debian, gettext can normally be installed with:
+
+    sudo apt-get install gettext
+
+Qt development tools must also be installed.
+
+## Regenerating the English translation source
+
+Configure Fibercoin first so the Qt build tools are detected.
+
+Then run:
+
+    cd src
+    make translate
+
+The translation target regenerates `qt/fibercoinstrings.cpp` and updates:
+
+    qt/locale/fibercoin_en.ts
+
+using Qt `lupdate`.
+
+## Compiled translations
+
+Qt translation source files use the `.ts` format.
+
+During the build, `lrelease` converts them into binary `.qm` files used by the Fibercoin Qt wallet.
+
+The translation resource manifest is:
+
+    src/qt/fibercoin_locale.qrc
+
+For example:
+
+    <qresource prefix="/translations">
+        <file alias="en">locale/fibercoin_en.qm</file>
+    </qresource>
+
+New languages must be added to this resource file.
+
+## Writing translatable Qt code
+
+Qt interface strings should use `tr()`.
+
+Example:
+
+    QToolBar* toolbar = addToolBar(tr("Tabs toolbar"));
+
+Do not hard-code user-visible text when it should be translated.
+
+## Updating translations
+
+When user-visible source strings change:
+
+1. Configure the project with Qt support.
+2. Run:
+
+       cd src
+       make translate
+
+3. Review the changes to:
+
+       src/qt/fibercoinstrings.cpp
+       src/qt/locale/fibercoin_en.ts
+
+4. Update translated `.ts` files as needed.
+5. Build the Qt application and verify that the `.qm` resources are generated correctly.
+
+Translation updates are commonly grouped near release preparation to reduce unnecessary translation conflicts.
+
+## Plural translations
+
+Qt uses `%n` for plural-aware strings.
+
+When adding or changing plural strings:
+
+1. Regenerate `fibercoin_en.ts`.
+2. Open the translation in Qt Linguist.
+3. Search for `%n`.
+4. Complete the required singular and plural forms.
+5. Mark the translation as complete.
+6. Save the `.ts` file.
+
+Different languages may require more than two plural forms.
+
+## Adding a new language
+
+Create a translation source file using the appropriate locale name:
+
+    fibercoin_xx.ts
+
+or:
+
+    fibercoin_xx_YY.ts
+
+Then add the compiled `.qm` resource to:
+
+    src/qt/fibercoin_locale.qrc
+
+Example:
+
+    <file alias="de">locale/fibercoin_de.qm</file>
+
+The resource entry must reference the compiled `.qm` file rather than the source `.ts` file.
+
+## Qt project support
+
+The Qt project configuration also includes the translation resources:
+
+    contrib/fibercoin-qt.pro
+
+Additional translation tooling is available in:
+
+    contrib/qt_translations.py
+
+## Release validation
+
+Before a Fibercoin release:
+
+- regenerate the English translation source
+- review changed source strings
+- update affected translations
+- compile the Qt translation resources
+- build the Qt wallet
+- verify that translated interfaces load correctly

@@ -6,8 +6,7 @@ and the result is not very consistent. However, we're now trying to converge to
 a single style, so please use it in new code. Old code will be converted
 gradually.
 - Basic rules specified in [src/.clang-format](/src/.clang-format).
-  Use a recent clang-format to format automatically using one of the [dev scripts]
-  (/contrib/devtools/README.md#clang-formatpy).
+  Use a compatible version of `clang-format` with the repository configuration.
   - Braces on new lines for namespaces, classes, functions, methods.
   - Braces on the same line for everything else.
   - 4 space indentation (no tabs) for every block except namespaces.
@@ -53,7 +52,7 @@ For example, to describe a function use:
  */
 bool function(int arg1, const char *arg2)
 ```
-A complete list of `@xxx` commands can be found at http://www.stack.nl/~dimitri/doxygen/manual/commands.html.
+A complete list of `@xxx` commands can be found at https://www.doxygen.nl/manual/commands.html.
 As Doxygen recognizes the comments by the delimiters (`/**` and `*/` in this case), you don't
 *need* to provide any commands for a comment to be valid; just a description text is fine.
 
@@ -94,7 +93,7 @@ Not OK (used plenty in the current source, but not picked up):
 //
 ```
 
-A full list of comment syntaxes picked up by doxygen can be found at http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html,
+A full list of comment syntaxes picked up by doxygen can be found at https://www.doxygen.nl/manual/docblocks.html,
 but if possible use one of the above styles.
 
 Development tips and tricks
@@ -102,8 +101,11 @@ Development tips and tricks
 
 **compiling for debugging**
 
-Run configure with the --enable-debug option, then make. Or run configure with
-CXXFLAGS="-g -ggdb -O0" or whatever debug flags you need.
+Configure with explicit debugging compiler flags, for example:
+
+    CXXFLAGS="-g -ggdb -O0" ./configure
+
+Then build normally with `make`.
 
 **debug.log**
 
@@ -156,9 +158,9 @@ Threads
 
 - ThreadDNSAddressSeed : Loads addresses of peers from the DNS.
 
-- ThreadMapPort : Universal plug-and-play startup/shutdown
+- ThreadMapPort : Handles UPnP startup and shutdown
 
-- ThreadSocketHandler : Sends/Receives data from peers on port 8333.
+- ThreadSocketHandler : Sends and receives data for connected peers.
 
 - ThreadOpenAddedConnections : Opens network connections to added nodes.
 
@@ -170,9 +172,9 @@ Threads
 
 - ThreadFlushWalletDB : Close the wallet.dat file if it hasn't been used in 500ms.
 
-- ThreadRPCServer : Remote procedure call handler, listens on port 8332 for connections and services them.
+- ThreadRPCServer : Handles JSON-RPC requests through the RPC server infrastructure.
 
-- BitcoinMiner : Generates bitcoins (if wallet is enabled).
+- BitcoinMiner : Historical internal function name used by Fibercoin block-generation and Proof-of-Stake code paths.
 
 - Shutdown : Does an orderly shutdown of everything.
 
@@ -238,8 +240,7 @@ Wallet
 
   - *Rationale*: In RPC code that conditionally uses the wallet (such as
     `validateaddress`) it is easy to forget that global pointer `pwalletMain`
-    can be NULL. See `qa/rpc-tests/disablewallet.py` for functional tests
-    exercising the API with `-disablewallet`
+    can be NULL. Test wallet-related changes with `-disablewallet` enabled.
 
 - Include `db_cxx.h` (BerkeleyDB header) only when `ENABLE_WALLET` is set
 

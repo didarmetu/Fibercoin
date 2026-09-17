@@ -1,0 +1,280 @@
+name: Ubuntu 18.04 x86-64 Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - upgrade/build-modernization
+
+jobs:
+  build:
+    name: Build Ubuntu 18.04 x86_64
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Show host environment
+        run: |
+          uname -a
+          docker --version
+
+      - name: Build inside Ubuntu 18.04 container
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            ubuntu:18.04 \
+            bash -lc '
+              set -euo pipefail
+
+              export DEBIAN_FRONTEND=noninteractive
+
+              apt-get update
+
+              apt-get install -y \
+                ca-certificates \
+                git \
+                build-essential \
+                libtool \
+                autotools-dev \
+                automake \
+                autoconf \
+                pkg-config \
+                curl \
+                file \
+                python3 \
+                libssl-dev \
+                libevent-dev \
+                libboost-system-dev \
+                libboost-filesystem-dev \
+                libboost-program-options-dev \
+                libboost-thread-dev \
+                libboost-chrono-dev \
+                libboost-test-dev \
+                libminiupnpc-dev \
+                libzmq3-dev \
+                qtbase5-dev \
+                qttools5-dev \
+                qttools5-dev-tools \
+                libprotobuf-dev \
+                protobuf-compiler \
+                libqrencode-dev
+
+              echo "===== UBUNTU 18.04 BUILD ENVIRONMENT ====="
+              cat /etc/os-release
+              uname -a
+              gcc --version
+              g++ --version
+              ldd --version | head -1
+
+              mkdir -p diagnostics
+              mkdir -p .ci/ubuntu-18.04
+
+              BDB_SOURCE="/workspace/.ci/ubuntu-18.04/bdb-source"
+              BDB_PREFIX="/workspace/.ci/ubuntu-18.04/bdb48"
+
+              mkdir -p "$BDB_SOURCE" "$BDB_PREFIX"
+              cd "$BDB_SOURCE"
+
+              curl --location --fail \
+                --output db-4.8.30.NC.tar.gz \
+                https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
+
+              echo \
+                "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef db-4.8.30.NC.tar.gz" \
+                | sha256sum -c -
+
+              tar -xzf db-4.8.30.NC.tar.gz
+              cd db-4.8.30.NC
+
+              sed -i \
+                "s/__atomic_compare_exchange/__atomic_compare_exchange_db/g" \
+                dbinc/atomic.h
+
+              sed -i \
+                "s/atomic_init/atomic_init_db/g" \
+                dbinc/atomic.h \
+                mp/mp_region.c \
+                mp/mp_mvcc.c \
+                mp/mp_fget.c \
+                mutex/mut_method.c \
+                mutex/mut_tas.c
+
+              cd build_unix
+
+              CFLAGS="-Wno-error=implicit-function-declaration" \
+                ../dist/configure \
+                --prefix="$BDB_PREFIX" \
+                --enable-cxx \
+                --disable-shared \
+                --with-pic \
+                --disable-replication
+
+              make -j"$(nproc)"
+              make install
+
+              cd /workspace
+
+              set -o pipefail
+              ./autogen.sh \
+                2>&1 | tee diagnostics/ubuntu-18.04-autogen.log
+
+              CPPFLAGS="-I$BDB_PREFIX/include" \
+              LDFLAGS="-L$BDB_PREFIX/lib" \
+              ./configure \
+                --disable-tests \
+                --with-gui=qt5 \
+                --with-miniupnpc \
+                2>&1 | tee diagnostics/ubuntu-18.04-configure.log
+
+              make -j"$(nproc)" V=1 \
+                2>&1 | tee diagnostics/ubuntu-18.04-build.log
+
+              cp config.log \
+                diagnostics/ubuntu-18.04-config.log \
+                2>/dev/null || true
+
+              {
+                echo "===== OS ====="
+                cat /etc/os-release
+                echo
+                echo "===== GLIBC ====="
+                ldd --version | head -1
+                echo
+                echo "===== GCC ====="
+                gcc --version
+                echo
+                echo "===== G++ ====="
+                g++ --version
+              } > diagnostics/ubuntu-18.04-environment.txt
+
+              PACKAGE="Fibercoin-2.0.2.6-Ubuntu-18.04-x86_64"
+
+              rm -rf "$PACKAGE"
+              mkdir -p "$PACKAGE/bin"
+
+              cp src/fibercoind \
+                "$PACKAGE/bin/"
+
+              cp src/fibercoin-cli \
+                "$PACKAGE/bin/"
+
+              cp src/fibercoin-tx \
+                "$PACKAGE/bin/"
+
+              cp src/qt/fibercoin-qt \
+                "$PACKAGE/"
+
+              chmod +x \
+                "$PACKAGE/bin/fibercoind" \
+                "$PACKAGE/bin/fibercoin-cli" \
+                "$PACKAGE/bin/fibercoin-tx" \
+                "$PACKAGE/fibercoin-qt"
+
+              strip --strip-unneeded \
+                "$PACKAGE/bin/fibercoind" \
+                "$PACKAGE/bin/fibercoin-cli" \
+                "$PACKAGE/bin/fibercoin-tx" \
+                "$PACKAGE/fibercoin-qt"
+
+              REPORT="$PACKAGE/runtime-libraries.txt"
+              : > "$REPORT"
+
+              for binary in \
+                "$PACKAGE/bin/fibercoind" \
+                "$PACKAGE/bin/fibercoin-cli" \
+                "$PACKAGE/bin/fibercoin-tx" \
+                "$PACKAGE/fibercoin-qt"
+              do
+                {
+                  echo "===== $binary ====="
+                  file "$binary"
+                  ldd "$binary"
+                  echo
+                } >> "$REPORT"
+              done
+
+              cat "$REPORT"
+
+              if grep -q "not found" "$REPORT"; then
+                echo "Missing Ubuntu 18.04 runtime dependency."
+                exit 1
+              fi
+
+              test_command() {
+                binary="$1"
+                argument="$2"
+                expected="$3"
+
+                status=0
+
+                if output=$("$binary" "$argument" 2>&1); then
+                  status=0
+                else
+                  status=$?
+                fi
+
+                echo "$output"
+
+                if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then
+                  echo "$binary exited with status $status"
+                  return "$status"
+                fi
+
+                if ! grep -Eqi "$expected" <<< "$output"; then
+                  echo "$binary did not produce expected output"
+                  return 1
+                fi
+              }
+
+              test_command \
+                "$PACKAGE/bin/fibercoind" \
+                "--version" \
+                "2.0.2.6"
+
+              test_command \
+                "$PACKAGE/bin/fibercoin-cli" \
+                "--version" \
+                "2.0.2.6"
+
+              test_command \
+                "$PACKAGE/bin/fibercoin-tx" \
+                "-?" \
+                "usage|fibercoin-tx"
+
+              QT_QPA_PLATFORM=offscreen \
+              test_command \
+                "$PACKAGE/fibercoin-qt" \
+                "--version" \
+                "2.0.2.6"
+
+              ARCHIVE="$PACKAGE.tar.gz"
+
+              tar -czf "$ARCHIVE" "$PACKAGE"
+              sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+
+              cat "$ARCHIVE.sha256"
+            '
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: fibercoin-ubuntu-18.04-diagnostics
+          path: diagnostics/
+          if-no-files-found: warn
+
+      - name: Upload Ubuntu 18.04 package
+        uses: actions/upload-artifact@v6
+        with:
+          name: fibercoin-Ubuntu-18.04-x86_64
+          path: |
+            Fibercoin-2.0.2.6-Ubuntu-18.04-x86_64.tar.gz
+            Fibercoin-2.0.2.6-Ubuntu-18.04-x86_64.tar.gz.sha256
+            Fibercoin-2.0.2.6-Ubuntu-18.04-x86_64/runtime-libraries.txt
+          if-no-files-found: error
