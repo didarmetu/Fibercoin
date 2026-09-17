@@ -532,7 +532,7 @@ jobs:
           test_command \
             "$PACKAGE/Fibercoin.app/Contents/MacOS/fibercoin-qt" \
             "-version" \
-            "version"
+            "Fibercoin Core|2\\.0\\.2\\.6"
 
       - name: Create Fibercoin DMG
         shell: bash
