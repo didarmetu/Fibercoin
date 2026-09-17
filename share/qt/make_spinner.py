@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# Fibercoin compatibility review: updated for Python 3/Pillow on 2026-09-17.
 # W.J. van der Laan, 2011
 # Make spinning animation from a .png
 # Requires imagemagick 6.7+
@@ -25,12 +26,16 @@ def frame_to_filename(frame):
     return path.join(TMPDIR, TMPNAME % frame)
 
 frame_files = []
-for frame in xrange(NUMFRAMES):
+for frame in range(NUMFRAMES):
     rotation = (frame + 0.5) / NUMFRAMES * 360.0
     if CLOCKWISE:
         rotation = -rotation
     im_new = im_src.rotate(rotation, Image.BICUBIC)
-    im_new.thumbnail(DSIZE, Image.ANTIALIAS)
+    try:
+        resample = Image.Resampling.LANCZOS
+    except AttributeError:
+        resample = Image.LANCZOS
+    im_new.thumbnail(DSIZE, resample)
     outfile = frame_to_filename(frame)
     im_new.save(outfile, 'png')
     frame_files.append(outfile)

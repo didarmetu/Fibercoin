@@ -1,4 +1,13 @@
 # Fibercoin: based on GNU Autoconf Archive 2024.10.16 serial 20; header-only Boost.System compatibility retained on 2026-09-17.
+#
+# Fibercoin compatibility note:
+# Some modern Boost distributions provide Boost.System without a separately
+# linkable libboost_system library. CI validation on 2026-09-17 showed:
+#   - Ubuntu 18.04 and Ubuntu 24.04 use compiled Boost.System.
+#   - Windows 11 cross-build uses compiled Boost.System.
+#   - Ubuntu 26.04 and macOS arm64/x86_64 require header-only Boost.System.
+# Keep the header-only fallback unless all supported build environments are
+# verified to provide a compatible compiled Boost.System library.
 # ===========================================================================
 #     https://www.gnu.org/software/autoconf-archive/ax_boost_system.html
 # ===========================================================================

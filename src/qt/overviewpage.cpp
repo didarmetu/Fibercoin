@@ -2,7 +2,7 @@
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING.
 
 #include "overviewpage.h"
 #include "ui_overviewpage.h"
@@ -23,7 +23,7 @@
 #include <QSettings>
 #include <QTimer>
 
-#define DECORATION_SIZE 48
+#define DECORATION_SIZE 36
 #define ICON_OFFSET 16
 #define NUM_ITEMS 9
 

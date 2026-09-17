@@ -2,7 +2,7 @@
 // Copyright (c) 2014-2015 The Dash developers
 // Copyright (c) 2015-2017 The PIVX developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING.
 
 #include "splashscreen.h"
 
@@ -25,22 +25,15 @@
 
 SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle* networkStyle) : QWidget(0, f), curAlignment(0)
 {
-    titleText = tr("Fibercoin");
-    versionText =
-        QString(tr("Version %1"))
+    titleText =
+        QString("%1 %2")
+            .arg(tr("Fibercoin"))
             .arg(QString::fromStdString(FormatFullVersion()));
-    copyrightTextBtc =
-        QChar(0xA9) + QString(" 2009-%1 ").arg(COPYRIGHT_YEAR) +
-        QString(tr("The Bitcoin Core developers"));
-    copyrightTextDash =
-        QChar(0xA9) + QString(" 2014-%1 ").arg(COPYRIGHT_YEAR) +
-        QString(tr("The Dash Core developers"));
-    copyrightTextPIVX =
-        QChar(0xA9) + QString(" 2015-%1 ").arg(COPYRIGHT_YEAR) +
-        QString(tr("The PIVX Core developers"));
     copyrightTextFBC =
         QChar(0xA9) + QString(" 2019-%1 ").arg(COPYRIGHT_YEAR) +
         QString(tr("The Fibercoin developers"));
+    lineageText =
+        QString(tr("Based on Bitcoin Core, Dash Core and PIVX Core software"));
     titleAddText = networkStyle->getTitleAddText();
 
     pixmap = networkStyle->getSplashImage();
@@ -122,10 +115,8 @@ void SplashScreen::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);
 
-    const int paddingLeft = 14;
-    const int paddingTop = 400;
-    const int titleVersionVSpace = 17;
-    const int titleCopyrightVSpace = 32;
+    const int infoBottomMargin = 42;
+    const int infoLineSpacing = 18;
 
     float fontFactor = 1.0;
     const QString font = QApplication::font().family();
@@ -137,37 +128,29 @@ void SplashScreen::paintEvent(QPaintEvent* event)
     painter.drawPixmap(rect(), pixmap);
     painter.setPen(QColor(255, 255, 255));
 
-    painter.setFont(QFont(font, 28 * fontFactor));
     QFontMetrics fm = painter.fontMetrics();
-    if (fm.width(titleText) > 160)
-        fontFactor = 0.75;
 
-    painter.setFont(QFont(font, 28 * fontFactor));
-    painter.drawText(paddingLeft, paddingTop, titleText);
+    const int infoBottom = height() - infoBottomMargin;
+    const int titleY = infoBottom - (infoLineSpacing * 3);
+    const int copyrightY = infoBottom - (infoLineSpacing * 2);
+    const int lineageY = infoBottom - infoLineSpacing;
 
-    painter.setFont(QFont(font, 15 * fontFactor));
+    painter.setFont(QFont(font, 15 * fontFactor, QFont::Bold));
     painter.drawText(
-        paddingLeft,
-        paddingTop + titleVersionVSpace,
-        versionText);
+        QRect(0, titleY, width(), infoLineSpacing),
+        Qt::AlignHCenter | Qt::AlignVCenter,
+        titleText);
 
     painter.setFont(QFont(font, 10 * fontFactor));
     painter.drawText(
-        paddingLeft,
-        paddingTop + titleCopyrightVSpace,
-        copyrightTextBtc);
-    painter.drawText(
-        paddingLeft,
-        paddingTop + titleCopyrightVSpace + 12,
-        copyrightTextDash);
-    painter.drawText(
-        paddingLeft,
-        paddingTop + titleCopyrightVSpace + 24,
-        copyrightTextPIVX);
-    painter.drawText(
-        paddingLeft,
-        paddingTop + titleCopyrightVSpace + 36,
+        QRect(0, copyrightY, width(), infoLineSpacing),
+        Qt::AlignHCenter | Qt::AlignVCenter,
         copyrightTextFBC);
+
+    painter.drawText(
+        QRect(0, lineageY, width(), infoLineSpacing),
+        Qt::AlignHCenter | Qt::AlignVCenter,
+        lineageText);
 
     if (!titleAddText.isEmpty()) {
         QFont boldFont(font, 10 * fontFactor);

@@ -1,34 +1,67 @@
-<!--- Remove this description and sections that do not apply -->
+<!-- Remove sections that do not apply. -->
 
-This issue tracker is only for technical issues related to Fibercoin.
-General Fibercoin questions and/or support requests and are best directed to the [Fibercoin Discord](https://discordapp.com/invite/9nzt37V).
+This issue tracker is for technical issues related to Fibercoin Core.
 
-### Describe the issue
+For general questions and community support, use the Fibercoin Discord:
+https://discord.gg/hUvXmJj
 
-### Can you reliably reproduce the issue?
-#### If so, please list the steps to reproduce below:
+## Describe the issue
+
+Provide a clear description of the problem.
+
+## Steps to reproduce
+
+If the issue can be reproduced reliably, list the steps:
+
 1.
 2.
 3.
 
-### Expected behavior
-Tell us what should happen
+## Expected behavior
 
-### Actual behavior
-Tell us what happens instead
+Describe what you expected to happen.
 
-### Screenshots.
-If the issue is related to the GUI, screenshots can be added to this issue via drag & drop.
+## Actual behavior
 
-### What version of Fibercoin are you using?
-List the version number/commit ID, and if it is an official binary, self compiled or a distribution package.
+Describe what happened instead.
 
-### Machine specs:
-- OS:
+## Screenshots
+
+If the issue affects the graphical wallet, screenshots may be attached by dragging them into the issue.
+
+## Fibercoin version
+
+Provide the Fibercoin Core version or commit ID.
+
+For example:
+
+    Fibercoin Core v2.0.2.6
+
+Also indicate whether you are using:
+
+- an official release binary
+- a self-compiled build
+- a distribution package
+
+## System information
+
+- Operating system:
 - CPU:
 - RAM:
 - Disk size:
-- Disk Type (HD/SDD):
+- Disk type (HDD/SSD):
+- Architecture (x86_64/arm64/etc.):
 
-### Any extra information that might be useful in the debugging process.
-This is normally the contents of a `debug.log`, `db.log` or `config.log` file. Raw text or a link to a pastebin type site are preferred.
+## Logs and additional information
+
+Relevant information may include:
+
+- `debug.log`
+- `db.log`
+- `config.log`
+- GitHub Actions logs
+- terminal output
+
+Please use fenced code blocks for short log excerpts or attach larger log files.
+
+Do not post private keys, seed phrases, wallet passwords, RPC passwords, authentication cookies, or other sensitive information.

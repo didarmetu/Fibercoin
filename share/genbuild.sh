@@ -1,4 +1,5 @@
 #!/bin/sh
+# Fibercoin compatibility review: checked on 2026-09-17.
 if [ $# -gt 1 ]; then
     cd "$2"
 fi

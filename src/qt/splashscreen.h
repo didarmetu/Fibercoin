@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2014 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING.
 
 #ifndef BITCOIN_QT_SPLASHSCREEN_H
 #define BITCOIN_QT_SPLASHSCREEN_H
@@ -42,11 +42,8 @@ private:
 
     QPixmap pixmap;
     QString titleText;
-    QString versionText;
-    QString copyrightTextBtc;
-    QString copyrightTextDash;
-    QString copyrightTextPIVX;
     QString copyrightTextFBC;
+    QString lineageText;
     QString titleAddText;
     QString curMessage;
     QColor curColor;

@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+# Fibercoin compatibility review: updated for Python 3 on 2026-09-17.
 '''
 Extract _("...") strings for translation and convert to Qt stringdefs so that
 they can be picked up by Qt linguist.

@@ -3,10 +3,11 @@
 <plist version="0.9">
 <dict>
   <key>LSMinimumSystemVersion</key>
-  <string>10.8.0</string>
+  <string>15.0</string>
 
   <key>LSArchitecturePriority</key>
   <array>
+    <string>arm64</string>
     <string>x86_64</string>
   </array>
 
@@ -17,13 +18,13 @@
   <string>APPL</string>
 
   <key>CFBundleGetInfoString</key>
-  <string>@CLIENT_VERSION_MAJOR@.@CLIENT_VERSION_MINOR@.@CLIENT_VERSION_REVISION@, Copyright © 2009-@COPYRIGHT_YEAR@ The Bitcoin Core developers, 2014-@COPYRIGHT_YEAR@ The Dash Core developers, 2015-@COPYRIGHT_YEAR@ The Pivx Core developers, 2019-@COPYRIGHT_YEAR@ The Fibercoin developers</string>
+  <string>@CLIENT_VERSION_MAJOR@.@CLIENT_VERSION_MINOR@.@CLIENT_VERSION_REVISION@.@CLIENT_VERSION_BUILD@, Copyright © 2009-@COPYRIGHT_YEAR@ The Bitcoin Core developers, 2014-@COPYRIGHT_YEAR@ The Dash Core developers, 2015-@COPYRIGHT_YEAR@ The Pivx Core developers, 2019-@COPYRIGHT_YEAR@ The Fibercoin developers</string>
 
   <key>CFBundleShortVersionString</key>
-  <string>@CLIENT_VERSION_MAJOR@.@CLIENT_VERSION_MINOR@.@CLIENT_VERSION_REVISION@</string>
+  <string>@CLIENT_VERSION_MAJOR@.@CLIENT_VERSION_MINOR@.@CLIENT_VERSION_REVISION@.@CLIENT_VERSION_BUILD@</string>
 
   <key>CFBundleVersion</key>
-  <string>@CLIENT_VERSION_MAJOR@.@CLIENT_VERSION_MINOR@.@CLIENT_VERSION_REVISION@</string>
+  <string>@CLIENT_VERSION_MAJOR@.@CLIENT_VERSION_MINOR@.@CLIENT_VERSION_REVISION@.@CLIENT_VERSION_BUILD@</string>
 
   <key>CFBundleSignature</key>
   <string>????</string>
@@ -32,7 +33,7 @@
   <string>Fibercoin-Qt</string>
 
   <key>CFBundleIdentifier</key>
-  <string>io.savebitcoin.Fibercoin-Qt</string>
+  <string>io.fibercoin.Fibercoin-Qt</string>
 
   <key>CFBundleURLTypes</key>
   <array>
@@ -40,7 +41,7 @@
       <key>CFBundleTypeRole</key>
       <string>Editor</string>
       <key>CFBundleURLName</key>
-      <string>io.savebitcoin.FibercoinPayment</string>
+      <string>io.fibercoin.FibercoinPayment</string>
       <key>CFBundleURLSchemes</key>
       <array>
         <string>fibercoin</string>
@@ -52,7 +53,7 @@
   <array>
     <dict>
       <key>UTTypeIdentifier</key>
-      <string>io.savebitcoin.paymentrequest</string>
+      <string>io.fibercoin.paymentrequest</string>
       <key>UTTypeDescription</key>
       <string>Fibercoin payment request</string>
       <key>UTTypeConformsTo</key>
@@ -78,7 +79,7 @@
       <string>Editor</string>
       <key>LSItemContentTypes</key>
       <array>
-        <string>io.savebitcoin.paymentrequest</string>
+        <string>io.fibercoin.paymentrequest</string>
       </array>
       <key>LSHandlerRank</key>
       <string>Owner</string>

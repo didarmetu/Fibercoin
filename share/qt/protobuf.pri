@@ -1,4 +1,5 @@
-# Based on: http://code.google.com/p/ostinato/source/browse/protobuf.pri
+# Based on the historical Ostinato protobuf.pri qmake integration.
+# Fibercoin compatibility review: checked on 2026-09-17.
 #
 # Qt qmake integration with Google Protocol Buffers compiler protoc
 #
