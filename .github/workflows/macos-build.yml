@@ -511,7 +511,7 @@ jobs:
 
           test_command \
             "$PACKAGE/Fibercoin-Qt.app/Contents/MacOS/fibercoin-qt" \
-            "--version" \
+            "-version" \
             "version"
 
       - name: Create final ZIP
