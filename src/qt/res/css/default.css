@@ -841,7 +841,7 @@ QLabel#labelOverviewHeaderLeft {
 
 QLabel#labelOverviewHeaderRight {
 	qproperty-alignment: 'AlignVCenter | AlignRight';
-	background-image: url(':/images/korthern_logo_horizontal');
+	background-image: url(':/images/fibercoin_logo_horizontal');
 	background-repeat: no-repeat;
 }
 
