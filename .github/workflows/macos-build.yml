@@ -6,6 +6,10 @@ on:
     branches:
       - upgrade/build-modernization
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   build:
     name: Build ${{ matrix.arch }}
@@ -318,6 +322,18 @@ jobs:
           name: fibercoin-macos-x86_64
           path: architecture/x86_64
 
+      - name: Download arm64 diagnostics
+        uses: actions/download-artifact@v6
+        with:
+          name: fibercoin-macos-arm64-diagnostics
+          path: diagnostics/arm64
+
+      - name: Download x86_64 diagnostics
+        uses: actions/download-artifact@v6
+        with:
+          name: fibercoin-macos-x86_64-diagnostics
+          path: diagnostics/x86_64
+
       - name: Extract architecture packages
         shell: bash
         run: |
@@ -376,6 +392,10 @@ jobs:
             fi
           done < <(find "$ARM_ROOT" -type f -print0)
 
+          mv \
+            "$PACKAGE/Fibercoin-Qt.app" \
+            "$PACKAGE/Fibercoin.app"
+
       - name: Verify main universal binaries
         shell: bash
         run: |
@@ -387,7 +407,7 @@ jobs:
             "$PACKAGE/bin/fibercoind"
             "$PACKAGE/bin/fibercoin-cli"
             "$PACKAGE/bin/fibercoin-tx"
-            "$PACKAGE/Fibercoin-Qt.app/Contents/MacOS/fibercoin-qt"
+            "$PACKAGE/Fibercoin.app/Contents/MacOS/fibercoin-qt"
           )
 
           for binary in "${binaries[@]}"; do
@@ -436,7 +456,7 @@ jobs:
           set -euo pipefail
 
           PACKAGE="Fibercoin-macOS-universal"
-          APP="$PACKAGE/Fibercoin-Qt.app"
+          APP="$PACKAGE/Fibercoin.app"
 
           # Sign standalone command-line binaries.
           for binary in \
@@ -510,33 +530,89 @@ jobs:
             "usage|fibercoin-tx"
 
           test_command \
-            "$PACKAGE/Fibercoin-Qt.app/Contents/MacOS/fibercoin-qt" \
+            "$PACKAGE/Fibercoin.app/Contents/MacOS/fibercoin-qt" \
             "-version" \
             "version"
 
-      - name: Create final ZIP
+      - name: Create Fibercoin DMG
         shell: bash
         run: |
           set -euo pipefail
 
           PACKAGE="Fibercoin-macOS-universal"
-          ZIP="Fibercoin-2.0.2.6-macOS-universal-unsigned.zip"
+          APP="$PACKAGE/Fibercoin.app"
+          DMG_ROOT="$RUNNER_TEMP/fibercoin-dmg"
 
-          ditto -c -k \
-            --sequesterRsrc \
-            --keepParent \
-            "$PACKAGE" \
-            "$ZIP"
+          test -d "$APP"
 
-          shasum -a 256 "$ZIP" > "$ZIP.sha256"
-          cat "$ZIP.sha256"
+          rm -rf "$DMG_ROOT"
+          mkdir -p "$DMG_ROOT"
 
-      - name: Upload portable universal package
+          ditto "$APP" "$DMG_ROOT/Fibercoin.app"
+          ln -s /Applications "$DMG_ROOT/Applications"
+
+          hdiutil create \
+            -volname "Fibercoin" \
+            -srcfolder "$DMG_ROOT" \
+            -ov \
+            -format UDZO \
+            Fibercoin.dmg
+
+          shasum -a 256 Fibercoin.dmg > Fibercoin.dmg.sha256
+          cat Fibercoin.dmg.sha256
+
+      - name: Upload Fibercoin app
         uses: actions/upload-artifact@v6
         with:
-          name: fibercoin-macOS-universal-unsigned
-          path: |
-            Fibercoin-2.0.2.6-macOS-universal-unsigned.zip
-            Fibercoin-2.0.2.6-macOS-universal-unsigned.zip.sha256
-            Fibercoin-macOS-universal/runtime-libraries.txt
+          name: Fibercoin.app
+          path: Fibercoin-macOS-universal/Fibercoin.app
           if-no-files-found: error
+
+      - name: Upload Fibercoin DMG
+        uses: actions/upload-artifact@v6
+        with:
+          name: Fibercoin.dmg
+          path: |
+            Fibercoin.dmg
+            Fibercoin.dmg.sha256
+          if-no-files-found: error
+
+      - name: Upload combined macOS diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: fibercoin-macos-diagnostics
+          path: diagnostics/
+          if-no-files-found: warn
+
+      - name: Remove temporary architecture artifacts
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          artifacts=(
+            "fibercoin-macos-arm64"
+            "fibercoin-macos-x86_64"
+            "fibercoin-macos-arm64-diagnostics"
+            "fibercoin-macos-x86_64-diagnostics"
+          )
+
+          for artifact in "${artifacts[@]}"; do
+            artifact_id="$(
+              gh api \
+                "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" \
+                --jq ".artifacts[] | select(.name == \"$artifact\") | .id" \
+                | head -n 1
+            )"
+
+            if [ -n "$artifact_id" ]; then
+              echo "Deleting temporary artifact: $artifact"
+              gh api \
+                --method DELETE \
+                "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
+            fi
+          done
