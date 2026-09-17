@@ -6,8 +6,21 @@ Use the autogen script to prepare the build environment.
     ./configure
     make
 
-Always verify the signatures and checksums.
+For development builds with tests enabled:
 
-See doc/build-*.md for instructions on building fibercoind,
-the intended-for-services, no-graphical-interface, reference
-implementation of Fibercoin.
+    make check
+
+Always verify release checksums when downloading prebuilt binaries.
+
+See the platform build documentation for additional requirements and current dependency information:
+
+    doc/build-unix.md
+    doc/build-osx.md
+    doc/dependencies.md
+
+The main Fibercoin binaries include:
+
+    fibercoin-qt
+    fibercoind
+    fibercoin-cli
+    fibercoin-tx

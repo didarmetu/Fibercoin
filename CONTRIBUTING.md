@@ -1,22 +1,20 @@
-Contributing to Fibercoin
-==================================
+# Contributing to Fibercoin
 
 The Fibercoin project operates an open contributor model where anyone is
 welcome to contribute towards development in the form of peer review, testing
 and patches. This document explains the practical process and guidelines for
 contributing.
 
-Firstly in terms of structure, there is no particular concept of "Core
-developers" in the sense of privileged people. Open source often naturally
-revolves around meritocracy where longer term contributors gain more trust from
-the developer community. However, some hierarchy is necessary for practical
-purposes. As such there are repository "maintainers" who are responsible for
-merging pull requests as well as a "lead maintainer" who is responsible for the
-release cycle, overall merging, moderation and appointment of maintainers.
+Fibercoin is developed through open contribution and peer review.
+
+Repository maintainers are responsible for reviewing and merging pull requests,
+coordinating releases, and maintaining the quality and stability of the codebase.
+
+Contributors do not need special status to propose changes. All changes should
+go through the same pull-request and review process.
 
 
-Contributor Workflow
---------------------
+## Contributor Workflow
 
 The codebase is maintained using the "contributor workflow" where everyone
 without exception contributes patch proposals using "pull requests". This
@@ -58,7 +56,7 @@ the pull request affects. Valid areas as:
   - *Consensus* for changes to consensus critical code
   - *Docs* for changes to the documentation
   - *Qt* for changes to fibercoin-qt
-  - *Minting* for changes to the minting code
+  - *Staking / PoS* for changes to Proof-of-Stake and staking code
   - *Net* or *P2P* for changes to the peer-to-peer network code
   - *RPC/REST* for changes to the RPC or REST APIs
   - *Scripts and tools* for changes to the scripts and tools
@@ -78,11 +76,11 @@ Examples:
 
     Consensus: Add new opcode for BIP-XXXX OP_CHECKAWESOMESIG
     Net: Automatically create hidden service, listen on Tor
-    Qt: Add feed bump button
+    Qt: Add fee bump button
     Trivial: Fix typo in init.cpp
 
 If a pull request is specifically not to be considered for merging (yet) please
-prefix the title with [WIP] or use [Tasks Lists](https://help.github.com/articles/basic-writing-and-formatting-syntax/#task-lists)
+prefix the title with [WIP] or use [Tasks Lists](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-task-lists)
 in the body of the pull request to indicate tasks are pending.
 
 The body of the pull request should contain enough description about what the
@@ -94,8 +92,7 @@ At this stage one should expect comments and review from other contributors. You
 can add more commits to your pull request by committing them locally and pushing
 to your fork until you have satisfied all feedback.
 
-Squashing Commits
----------------------------
+## Squashing Commits
 If your pull request is accepted for merging, you may be asked by a maintainer
 to squash and or [rebase](https://git-scm.com/docs/git-rebase) your commits
 before it will be merged. The basic squashing workflow is shown below.
@@ -121,8 +118,33 @@ The length of time required for peer review is unpredictable and will vary from
 pull request to pull request.
 
 
-Pull Request Philosophy
------------------------
+## Testing and CI
+
+Contributors should test changes locally before submitting a pull request.
+
+At minimum:
+
+    git diff --check
+
+For builds with unit tests enabled:
+
+    make check
+
+Pull requests should also pass the applicable GitHub Actions workflows.
+
+Changes affecting platform-specific build or packaging behavior should be validated on the relevant Linux, Windows, or macOS workflow.
+
+Consensus, wallet, staking, masternode, networking, and RPC changes may require additional targeted testing.
+
+## Security Issues
+
+Do not publicly disclose vulnerabilities that could put Fibercoin users, wallets, nodes, or the network at immediate risk.
+
+Potentially exploitable security issues should be reported privately to the Fibercoin maintainers before public disclosure.
+
+Routine bugs and non-sensitive issues may be reported through the normal GitHub issue and pull-request process.
+
+## Pull Request Philosophy
 
 Patch sets should always be focused. For example, a pull request could add a
 feature, fix a bug, or refactor code; but not a mixture. Please also avoid super
@@ -188,7 +210,7 @@ request. Typically reviewers will review the code for obvious errors, as well as
 test out the patch set and opine on the technical merits of the patch. Project
 maintainers take into account the peer review when determining if there is
 consensus to merge a pull request (remember that discussions may have been
-spread out over GitHub, forums, email, and Slack discussions). The following
+spread out over GitHub, forums, email, and Discord discussions). The following
 language is used within pull-request comments:
 
   - ACK means "I have tested the code and I agree it should be merged";
@@ -203,11 +225,9 @@ language is used within pull-request comments:
 
 Reviewers should include the commit hash which they reviewed in their comments.
 
-Project maintainers reserve the right to weigh the opinions of peer reviewers
-using common sense judgement and also may weight based on meritocracy: Those
-that have demonstrated a deeper commitment and understanding towards the project
-(over time) or have clear domain expertise may naturally have more weight, as
-one would expect in all walks of life.
+Project maintainers consider the technical reasoning, testing evidence,
+and peer review provided on each pull request when deciding whether it is
+ready to merge.
 
 Where a patch set affects consensus critical code, the bar will be set much
 higher in terms of discussion and peer review requirements, keeping in mind that
@@ -215,7 +235,7 @@ mistakes could be very costly to the wider community. This includes refactoring
 of consensus critical code.
 
 Where a patch set proposes to change the Fibercoin consensus, it must have been
-discussed extensively on the forums and Slack, be accompanied by a widely
+discussed extensively on the forums and Discord, be accompanied by a widely
 discussed Proposal and have a generally widely perceived technical consensus of being
 a worthwhile change based on the judgement of the maintainers.
 
@@ -237,15 +257,15 @@ about:
     that personally, though! Instead, take another critical look at what you are suggesting
     and see if it: changes too much, is too broad, doesn't adhere to the
     [developer notes](doc/developer-notes.md), is dangerous or insecure, is messily written, etc.
-    Identify and address any of the issues you find. Then ask e.g. on Slack if someone could give
+    Identify and address any of the issues you find. Then ask e.g. on Discord if someone could give
     their opinion on the concept itself.
   - It may be because your code is too complex for all but a few people. And those people
     may not have realized your pull request even exists. A great way to find people who
     are qualified and care about the code you are touching is the
-    [Git Blame feature](https://help.github.com/articles/tracing-changes-in-a-file/). Simply
+    [Git Blame feature](https://docs.github.com/en/repositories/working-with-files/using-files/viewing-a-file#viewing-the-line-by-line-revision-history-for-a-file). Simply
     find the person touching the code you are touching before you and see if you can find
     them and give them a nudge. Don't be incessant about the nudging though.
-  - Finally, if all else fails, ask on Slack or elsewhere for someone to give your pull request
+  - Finally, if all else fails, ask on Discord or elsewhere for someone to give your pull request
     a look. If you think you've been waiting an unreasonably long amount of time (month+) for
     no particular reason (few lines changed, etc), this is totally fine. Try to return the favor
     when someone else is asking for feedback on their code, and universe balances out.

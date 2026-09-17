@@ -1,3 +1,4 @@
+dnl Fibercoin compatibility review: checked on 2026-09-16.
 dnl BITCOIN_SUBDIR_TO_INCLUDE([CPPFLAGS-VARIABLE-NAME],[SUBDIRECTORY-NAME],[HEADER-FILE])
 dnl SUBDIRECTORY-NAME must end with a path separator
 AC_DEFUN([BITCOIN_SUBDIR_TO_INCLUDE],[

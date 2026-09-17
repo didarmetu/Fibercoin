@@ -1,3 +1,4 @@
+dnl Fibercoin compatibility review: updated on 2026-09-16.
 AC_DEFUN([BITCOIN_FIND_BDB48],[
   AC_MSG_CHECKING([for Berkeley DB C++ headers])
   BDB_CPPFLAGS=
@@ -60,7 +61,7 @@ AC_DEFUN([BITCOIN_FIND_BDB48],[
     ])
   done
   if test "x$BDB_LIBS" = "x"; then
-      AC_MSG_ERROR([libdb_cxx missing, Bitcoin Core requires this library for wallet functionality (--disable-wallet to disable wallet functionality)])
+      AC_MSG_ERROR([libdb_cxx missing, Fibercoin Core requires this library for wallet functionality (--disable-wallet to disable wallet functionality)])
   fi
   AC_SUBST(BDB_LIBS)
 ])

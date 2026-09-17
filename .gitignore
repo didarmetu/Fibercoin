@@ -97,7 +97,6 @@ qrc_*.cpp
 *.pro.user
 
 # Mac specific
-.DS_Store
 build
 
 #lcov
@@ -124,3 +123,9 @@ qa/pull-tester/test.*/*
 .idea
 CMakeLists.txt
 cmake-build-debug
+
+# Local CI build artifacts
+.ci/
+
+# Editor and generated backup files
+*~

@@ -1,5 +1,5 @@
-2020dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
-AC_PREREQ([2.60])
+dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
+AC_PREREQ([2.64])
 define(_CLIENT_VERSION_MAJOR, 2)
 define(_CLIENT_VERSION_MINOR, 0)
 define(_CLIENT_VERSION_REVISION, 2)
@@ -11,7 +11,7 @@ LD_END_GROUP="-Wl,--end-group"
 AC_SUBST([LD_START_GROUP])
 AC_SUBST([LD_END_GROUP])
 
-AC_INIT([Fibercoin],[_CLIENT_VERSION_MAJOR._CLIENT_VERSION_MINOR._CLIENT_VERSION_REVISION],[www.savebitcoin.io],[fibercoin])
+AC_INIT([Fibercoin],[_CLIENT_VERSION_MAJOR._CLIENT_VERSION_MINOR._CLIENT_VERSION_REVISION],[https://github.com/didarmetu/Fibercoin/issues],[fibercoin])
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADERS([src/config/fibercoin-config.h])
 AC_CONFIG_AUX_DIR([build-aux])
