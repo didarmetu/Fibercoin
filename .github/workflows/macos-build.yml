@@ -146,8 +146,10 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: fibercoin-macos-${{ matrix.arch }}-diagnostics
-          path: macos-${{ matrix.arch }}-build.log
-          if-no-files-found: error
+          path: |
+            macos-${{ matrix.arch }}-build.log
+            config.log
+          if-no-files-found: warn
 
       - name: Stop after compile failure
         if: steps.compile.outputs.status != '0'
