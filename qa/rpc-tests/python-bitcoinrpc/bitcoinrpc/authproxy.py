@@ -85,7 +85,7 @@ class AuthServiceProxy(object):
         except AttributeError:
             pass
         authpair = user + b':' + passwd
-        self.__auth_header = b'Basic ' + base64.b64encode(authpair)
+        self.__auth_header = 'Basic ' + base64.b64encode(authpair).decode('ascii')
 
         if connection:
             # Callables re-use the connection of the original proxy

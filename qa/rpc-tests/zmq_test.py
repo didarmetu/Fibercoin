@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright (c) 2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -44,7 +44,7 @@ class ZMQTest (BitcoinTestFramework):
         genhashes = self.nodes[0].generate(1)
         self.sync_all()
 
-        print "listen..."
+        print("listen...")
         msg = self.zmqSubSocket.recv_multipart()
         topic = msg[0]
         body = msg[1]
