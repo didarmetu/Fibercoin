@@ -56,7 +56,31 @@ HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about) : QDialog(pare
         QRegExp uri("<(.*)>", Qt::CaseSensitive, QRegExp::RegExp2);
         uri.setMinimal(true); // use non-greedy matching
         licenseInfoHTML.replace(uri, "<a href=\"\\1\">\\1</a>");
-        // Replace newlines with HTML breaks
+        // Add Fibercoin-specific information before the project links
+        const QString generalInfoHTML =
+            "<br><br>"
+            "<b>General Information</b>"
+            "<br><br>"
+            "Fibercoin is a decentralized digital currency network powered by staking and masternodes. "
+            "Fibercoin Core provides the full-node wallet, blockchain validation and network services."
+            "<br><br>"
+            "Based on Bitcoin Core, Dash Core and PIVX Core."
+            "<br><br>"
+            "Fibercoin Core is open-source software released under the MIT License."
+            "<br>"
+            "See COPYING for full license and third-party notices."
+            "<br><br>";
+
+        licenseInfoHTML.replace(
+            "Project website:",
+            generalInfoHTML + "Project website:"
+        );
+
+        // Keep project links on separate lines in the About dialog
+        licenseInfoHTML.replace("\nSource code:", "<br>Source code:");
+        licenseInfoHTML.replace("\nFibercoin Exchange:", "<br>Fibercoin Exchange:");
+
+        // Replace paragraph breaks with HTML breaks
         licenseInfoHTML.replace("\n\n", "<br><br>");
 
         ui->aboutMessage->setTextFormat(Qt::RichText);

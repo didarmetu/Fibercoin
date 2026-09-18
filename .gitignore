@@ -129,3 +129,6 @@ cmake-build-debug
 
 # Editor and generated backup files
 *~
+
+# Qt Creator autosave files
+*.ui.autosave

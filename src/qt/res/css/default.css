@@ -850,15 +850,16 @@ QLabel#labelOverviewHeaderRight {
 	background-color: transparent;
 }
 
-QWidget .QFrame#frame_Header { /* Header with Page-Title and PIVX-image */
+QWidget .QFrame#frame_Header { /* Header with Page-Title */
 	min-width:400px;
-	background-color:#ffffff;
+	background-color:rgba(255, 255, 255, 150);
 }
 
 /* Rounded headers for primary wallet pages */
 QWidget#OverviewPage QFrame#frame_Header,
 QDialog#SendCoinsDialog QFrame#frame_Header,
-QWidget#MasternodeList QFrame#frame_Header {
+QWidget#MasternodeList QFrame#frame_Header,
+QWidget#ReceiveCoinsDialog QFrame#frame_Header {
     border: 1px solid rgba(0, 0, 0, 25);
     border-radius: 6px;
 }
