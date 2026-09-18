@@ -1064,10 +1064,10 @@ selection-color: rgb(0, 0, 0);</string>
                     </property>
                     <property name="styleSheet">
                      <string notr="true">QListView {
-    background-color: rgba(255, 255, 255, 175);
+    background-color: rgba(255, 255, 255, 150);
     border: 1px solid rgba(0, 0, 0, 30);
     border-radius: 6px;
-    padding: 4px 8px 4px 4px;
+    padding: 8px;
 }</string>
                     </property>
                     <property name="frameShape">

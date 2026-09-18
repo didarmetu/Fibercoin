@@ -528,7 +528,7 @@ void BitcoinGUI::createMenuBar()
         "}"
         "QMenu::item {"
         " color: #ffffff;"
-        " padding: 6px 28px 6px 26px;"
+        " padding: 6px 28px 6px 12px;"
         "}"
         "QMenu::item:selected {"
         " background-color: #005e89;"
