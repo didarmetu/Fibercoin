@@ -1582,7 +1582,7 @@
          <widget class="QFrame" name="frame_Send">
           <layout class="QHBoxLayout" name="horizontalLayout">
            <property name="topMargin">
-            <number>0</number>
+            <number>4</number>
            </property>
            <property name="bottomMargin">
             <number>12</number>

@@ -113,8 +113,8 @@ TransactionView::TransactionView(QWidget* parent) : QWidget(parent), model(0), t
     hlayout->addWidget(amountWidget);
 
     QVBoxLayout* vlayout = new QVBoxLayout(this);
-    vlayout->setContentsMargins(0, 0, 0, 0);
-    vlayout->setSpacing(0);
+    vlayout->setContentsMargins(5, 5, 5, 5);
+    vlayout->setSpacing(5);
 
     QTableView* view = new QTableView(this);
     vlayout->addLayout(hlayout);

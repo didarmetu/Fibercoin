@@ -468,6 +468,44 @@ void BitcoinGUI::createMenuBar()
     appMenuBar = menuBar();
 #endif
 
+#ifdef Q_OS_LINUX
+    appMenuBar->setStyleSheet(
+        "QMenuBar {"
+        " background-color: #003046;"
+        " color: #ffffff;"
+        " border: none;"
+        "}"
+        "QMenuBar::item {"
+        " background-color: transparent;"
+        " color: #ffffff;"
+        " padding: 5px 10px;"
+        "}"
+        "QMenuBar::item:selected {"
+        " background-color: #005e89;"
+        " color: #ffffff;"
+        "}"
+        "QMenu {"
+        " background-color: #003046;"
+        " color: #ffffff;"
+        " border: 1px solid #005e89;"
+        " padding: 4px;"
+        "}"
+        "QMenu::item {"
+        " color: #ffffff;"
+        " padding: 6px 28px 6px 26px;"
+        "}"
+        "QMenu::item:selected {"
+        " background-color: #005e89;"
+        " color: #ffffff;"
+        "}"
+        "QMenu::separator {"
+        " height: 1px;"
+        " background-color: #4ec298;"
+        " margin: 4px 8px;"
+        "}"
+    );
+#endif
+
     // Configure the menus
     QMenu* file = appMenuBar->addMenu(tr("&File"));
     if (walletFrame) {
