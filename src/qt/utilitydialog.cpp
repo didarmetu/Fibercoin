@@ -48,40 +48,23 @@ HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about) : QDialog(pare
         setWindowTitle(tr("About Fibercoin"));
         const QString guiVersion = QString::fromStdString(FormatGuiVersion());
 
-        /// HTML-format the license message from the core
+        /// HTML-format the shared information from the core
         QString licenseInfo = QString::fromStdString(LicenseInfo());
         QString licenseInfoHTML = licenseInfo;
 
-        // Make URLs clickable
+        // Make <https://...> URLs clickable
         QRegExp uri("<(.*)>", Qt::CaseSensitive, QRegExp::RegExp2);
-        uri.setMinimal(true); // use non-greedy matching
+        uri.setMinimal(true);
         licenseInfoHTML.replace(uri, "<a href=\"\\1\">\\1</a>");
-        // Add Fibercoin-specific information before the project links
-        const QString generalInfoHTML =
-            "<br><br>"
-            "<b>General Information</b>"
-            "<br><br>"
-            "Fibercoin is a decentralized digital currency network powered by staking and masternodes. "
-            "Fibercoin Core provides the full-node wallet, blockchain validation and network services."
-            "<br><br>"
-            "Based on Bitcoin Core, Dash Core and PIVX Core."
-            "<br><br>"
-            "Fibercoin Core is open-source software released under the MIT License."
-            "<br>"
-            "See COPYING for full license and third-party notices."
-            "<br><br>";
 
+        // Make the plain source-code URL clickable as well
         licenseInfoHTML.replace(
-            "Project website:",
-            generalInfoHTML + "Project website:"
+            "https://github.com/didarmetu/Fibercoin/",
+            "<a href=\"https://github.com/didarmetu/Fibercoin/\">https://github.com/didarmetu/Fibercoin/</a>"
         );
 
-        // Keep project links on separate lines in the About dialog
-        licenseInfoHTML.replace("\nSource code:", "<br>Source code:");
-        licenseInfoHTML.replace("\nFibercoin Exchange:", "<br>Fibercoin Exchange:");
-
-        // Replace paragraph breaks with HTML breaks
-        licenseInfoHTML.replace("\n\n", "<br><br>");
+        // Preserve the exact plain-text line structure in the About dialog
+        licenseInfoHTML.replace("\n", "<br>");
 
         ui->aboutMessage->setTextFormat(Qt::RichText);
         ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);

@@ -94,7 +94,7 @@ WalletView::WalletView(QWidget* parent) : QStackedWidget(parent),
     verticalLayout_8->addLayout(horizontalLayout_Header);
 
     QVBoxLayout* vbox = new QVBoxLayout();
-    vbox->setContentsMargins(5, 5, 18, 15);
+    vbox->setContentsMargins(5, 5, 18, 25);
     vbox->setSpacing(5);
     QHBoxLayout* hbox_buttons = new QHBoxLayout();
     vbox->addWidget(frame_Header);
@@ -106,8 +106,6 @@ WalletView::WalletView(QWidget* parent) : QStackedWidget(parent),
 #ifndef Q_OS_MAC // Icons on push buttons are very uncommon on Mac
     exportButton->setIcon(QIcon(":/icons/export"));
 #endif
-    hbox_buttons->addStretch();
-
     // Sum of selected transactions
     QLabel* transactionSumLabel = new QLabel();                // Label
     transactionSumLabel->setObjectName("transactionSumLabel"); // Label ID as CSS-reference
@@ -121,6 +119,7 @@ WalletView::WalletView(QWidget* parent) : QStackedWidget(parent),
     hbox_buttons->addWidget(transactionSum);
 
     hbox_buttons->addWidget(exportButton);
+    hbox_buttons->addStretch();
     vbox->addLayout(hbox_buttons);
     transactionsPage->setLayout(vbox);
 

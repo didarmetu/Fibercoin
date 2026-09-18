@@ -518,17 +518,16 @@ std::string HelpMessage(HelpMessageMode mode)
 
 std::string LicenseInfo()
 {
-    return FormatParagraph(strprintf(_("Copyright (C) 2009-%i The Bitcoin Core Developers"), COPYRIGHT_YEAR)) + "\n" +
-           FormatParagraph(strprintf(_("Copyright (C) 2014-%i The Dash Core Developers"), COPYRIGHT_YEAR)) + "\n" +
-           FormatParagraph(strprintf(_("Copyright (C) 2015-%i The PIVX Core Developers"), COPYRIGHT_YEAR)) + "\n" +
-           FormatParagraph(strprintf(_("Copyright (C) 2019-%i The Fibercoin Developers (Didarmetu)"), COPYRIGHT_YEAR)) + "\n" +
+    return FormatParagraph(_("Fibercoin is a decentralized digital currency network powered by staking and masternodes.")) + "\n" +
+           FormatParagraph(_("Fibercoin Core provides the full-node wallet, blockchain validation and network services.")) + "\n" +
            "\n" +
-           FormatParagraph(_("Fibercoin Core is distributed under the MIT software license. See the accompanying file COPYING for license information.")) + "\n" +
+           FormatParagraph(_("Based on Bitcoin Core, Dash Core and PIVX Core.")) + "\n" +
            "\n" +
-           FormatParagraph(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit <https://www.openssl.org/> and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.")) + "\n" +
+           FormatParagraph(_("Fibercoin Core is open-source software released under the MIT License.")) + "\n" +
+           FormatParagraph(_("See COPYING for full license and third-party notices.")) + "\n" +
            "\n" +
            FormatParagraph(_("Project website: <https://fibercoin.info/>")) + "\n" +
-           FormatParagraph(_("Source code: <https://github.com/didarmetu/Fibercoin/>")) + "\n" +
+           FormatParagraph(_("Source code: https://github.com/didarmetu/Fibercoin/")) + "\n" +
            FormatParagraph(_("Fibercoin Exchange: <https://fiberchange.com/>")) + "\n";
 }
 

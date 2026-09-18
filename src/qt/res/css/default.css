@@ -867,7 +867,8 @@ QWidget#ReceiveCoinsDialog QFrame#frame_Header {
 /* Let the rounded parent header show through */
 QWidget#OverviewPage QLabel#labelOverviewHeaderLeft,
 QDialog#SendCoinsDialog QLabel#labelOverviewHeaderLeft,
-QWidget#MasternodeList QLabel#labelOverviewHeaderLeft {
+QWidget#MasternodeList QLabel#labelOverviewHeaderLeft,
+QWidget#ReceiveCoinsDialog QLabel#labelOverviewHeaderLeft {
     background-color: transparent;
 }
 
