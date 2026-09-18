@@ -359,14 +359,14 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
 #endif // ENABLE_WALLET
 
-    quitAction = new QAction(QIcon(":/icons/menu_exit"), tr("E&xit"), this);
+    quitAction = new QAction(QIcon(QPixmap(":/icons/menu_exit")), tr("E&xit"), this);
     quitAction->setStatusTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
     aboutAction = new QAction(networkStyle->getAppIcon(), tr("&About Fibercoin"), this);
     aboutAction->setStatusTip(tr("Show information about Fibercoin"));
     aboutAction->setMenuRole(QAction::AboutRole);
-    aboutQtAction = new QAction(QIcon(":/icons/menu_info"), tr("About &Qt"), this);
+    aboutQtAction = new QAction(QIcon(QPixmap(":/icons/menu_info")), tr("About &Qt"), this);
     aboutQtAction->setStatusTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/menu_gear"), tr("&Options..."), this);
