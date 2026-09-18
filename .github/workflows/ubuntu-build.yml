@@ -2,9 +2,6 @@ name: Ubuntu 24.04 Build
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - upgrade/build-modernization
 
 jobs:
   build:

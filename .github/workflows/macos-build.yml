@@ -2,9 +2,6 @@ name: macOS Universal Build
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - upgrade/build-modernization
 
 permissions:
   contents: read

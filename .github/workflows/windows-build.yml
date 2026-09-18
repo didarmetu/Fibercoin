@@ -2,9 +2,6 @@ name: Windows 11 x86-64 Build
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - upgrade/build-modernization
 
 jobs:
   build:
