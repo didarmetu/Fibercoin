@@ -44,6 +44,8 @@
 #include <QDragEnterEvent>
 #include <QIcon>
 #include <QListWidget>
+#include <QDebug>
+#include <QFile>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMimeData>
@@ -430,6 +432,52 @@ void BitcoinGUI::createActions(const NetworkStyle* networkStyle)
     showHelpMessageAction = new QAction(QIcon(":/icons/menu_terminal"), tr("&Command-line options"), this);
     showHelpMessageAction->setMenuRole(QAction::NoRole);
     showHelpMessageAction->setStatusTip(tr("Show the Fibercoin Coin help message to get a list with possible Fibercoin Coin command-line options"));
+
+#if defined(Q_OS_LINUX) || defined(Q_OS_WIN)
+    quitAction->setIconVisibleInMenu(true);
+    aboutQtAction->setIconVisibleInMenu(true);
+    optionsAction->setIconVisibleInMenu(true);
+    toggleHideAction->setIconVisibleInMenu(true);
+
+    encryptWalletAction->setIconVisibleInMenu(true);
+    backupWalletAction->setIconVisibleInMenu(true);
+    changePassphraseAction->setIconVisibleInMenu(true);
+    unlockWalletAction->setIconVisibleInMenu(true);
+    lockWalletAction->setIconVisibleInMenu(true);
+    signMessageAction->setIconVisibleInMenu(true);
+    verifyMessageAction->setIconVisibleInMenu(true);
+    bip38ToolAction->setIconVisibleInMenu(true);
+    multiSendAction->setIconVisibleInMenu(true);
+
+    openInfoAction->setIconVisibleInMenu(true);
+    openRPCConsoleAction->setIconVisibleInMenu(true);
+    openNetworkAction->setIconVisibleInMenu(true);
+    openPeersAction->setIconVisibleInMenu(true);
+    openRepairAction->setIconVisibleInMenu(true);
+    openConfEditorAction->setIconVisibleInMenu(true);
+    openMNConfEditorAction->setIconVisibleInMenu(true);
+    showBackupsAction->setIconVisibleInMenu(true);
+
+    usedSendingAddressesAction->setIconVisibleInMenu(true);
+    usedReceivingAddressesAction->setIconVisibleInMenu(true);
+    multisigCreateAction->setIconVisibleInMenu(true);
+    multisigSpendAction->setIconVisibleInMenu(true);
+    multisigSignAction->setIconVisibleInMenu(true);
+
+    openAction->setIconVisibleInMenu(true);
+    openBlockExplorerAction->setIconVisibleInMenu(true);
+    showHelpMessageAction->setIconVisibleInMenu(true);
+#endif
+
+    qDebug() << "menu_exit exists:"
+             << QFile::exists(":/icons/menu_exit")
+             << "icon null:"
+             << quitAction->icon().isNull();
+
+    qDebug() << "menu_info exists:"
+             << QFile::exists(":/icons/menu_info")
+             << "icon null:"
+             << openInfoAction->icon().isNull();
 
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutClicked()));

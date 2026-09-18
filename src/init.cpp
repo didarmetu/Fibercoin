@@ -519,7 +519,8 @@ std::string HelpMessage(HelpMessageMode mode)
 std::string LicenseInfo()
 {
     return FormatParagraph(_("Fibercoin is a decentralized digital currency network powered by staking and masternodes.")) + "\n" +
-           FormatParagraph(_("Fibercoin Core provides the full-node wallet, blockchain validation and network services.")) + "\n" +
+           "\n" +
+           FormatParagraph(_("Fibercoin Core is a non-custodial full-node desktop wallet with staking and masternode functionality. It independently validates the Fibercoin blockchain and participates in the peer-to-peer network.")) + "\n" +
            "\n" +
            FormatParagraph(_("Based on Bitcoin Core, Dash Core and PIVX Core.")) + "\n" +
            "\n" +
