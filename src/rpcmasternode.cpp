@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "activemasternode.h"
+#include "hostedmasternode.h"
 #include "db.h"
 #include "init.h"
 #include "main.h"
@@ -59,6 +60,47 @@ void SendMoney(const CTxDestination& address, CAmount nValue, CWalletTx& wtxNew,
     }
     if (!pwalletMain->CommitTransaction(wtxNew, reservekey))
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
+}
+
+UniValue multimasterstatus(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "multimasterstatus\n"
+            "\nReturns the status of masternode identities hosted by this node.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"enabled\": true|false,\n"
+            "  \"loaded\": n,\n"
+            "  \"masternodes\": [ ... ]\n"
+            "}\n");
+
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("enabled", fMultiMaster));
+    result.push_back(Pair("loaded", static_cast<uint64_t>(hostedMasternodes.Size())));
+
+    UniValue entries(UniValue::VARR);
+
+    std::vector<CHostedMasternodeStatus> statuses =
+        hostedMasternodes.GetStatus();
+
+    BOOST_FOREACH (const CHostedMasternodeStatus& status, statuses) {
+        UniValue obj(UniValue::VOBJ);
+
+        obj.push_back(Pair("alias", status.alias));
+        obj.push_back(Pair("service", status.service));
+        obj.push_back(Pair("vin", status.vin));
+        obj.push_back(Pair("registered", status.registered));
+        obj.push_back(Pair("network_last_ping", status.networkLastPing));
+        obj.push_back(Pair("host_last_ping", status.hostLastPing));
+        obj.push_back(Pair("last_error", status.lastError));
+
+        entries.push_back(obj);
+    }
+
+    result.push_back(Pair("masternodes", entries));
+
+    return result;
 }
 
 // This command is retained for backwards compatibility, but is deprecated.

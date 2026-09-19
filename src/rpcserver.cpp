@@ -352,6 +352,7 @@ static const CRPCCommand vRPCCommands[] =
         {"fibercoin", "getmasternodeoutputs", &getmasternodeoutputs, true, true, true},
         {"fibercoin", "listmasternodeconf", &listmasternodeconf, true, true, false},
         {"fibercoin", "getmasternodestatus", &getmasternodestatus, true, true, false},
+        {"fibercoin", "multimasterstatus", &multimasterstatus, true, true, false},
         {"fibercoin", "getmasternodewinners", &getmasternodewinners, true, true, false},
         {"fibercoin", "getmasternodescores", &getmasternodescores, true, true, false},
         {"fibercoin", "mnbudget", &mnbudget, true, true, false},

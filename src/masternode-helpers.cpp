@@ -9,6 +9,7 @@
 #include "main.h"
 #include "masternodeman.h"
 #include "activemasternode.h"
+#include "hostedmasternode.h"
 #include "masternode-payments.h"
 #include "swifttx.h"
 
@@ -35,7 +36,13 @@ void ThreadMasternodePool()
 
             // check if we should activate or ping every few minutes,
             // start right after sync is considered to be done
-            if (c % MASTERNODE_PING_SECONDS == 0) activeMasternode.ManageStatus();
+            if (c % MASTERNODE_PING_SECONDS == 0) {
+                if (fMultiMaster) {
+                    hostedMasternodes.ManageStatus();
+                } else {
+                    activeMasternode.ManageStatus();
+                }
+            }
 
             if (c % 60 == 0) {
                 mnodeman.CheckAndRemove();

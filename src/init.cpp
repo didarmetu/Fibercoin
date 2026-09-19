@@ -13,6 +13,7 @@
 #include "init.h"
 
 #include "activemasternode.h"
+#include "hostedmasternode.h"
 #include "addrman.h"
 #include "amount.h"
 #include "checkpoints.h"
@@ -179,6 +180,14 @@ void PrepareShutdown()
     /// Be sure that anything that writes files or flushes caches only does this if the respective
     /// module was initialized.
     RenameThread("fibercoin-shutoff");
+
+    // Release hosted masternode hot keys while the locked-memory
+    // infrastructure is still alive. Waiting for static destruction can
+    // destroy CKey objects too late during process teardown.
+    if (fMultiMaster) {
+        hostedMasternodes.Clear();
+    }
+
     mempool.AddTransactionsUpdated(1);
     StopRPCThreads();
 #ifdef ENABLE_WALLET
@@ -473,6 +482,7 @@ std::string HelpMessage(HelpMessageMode mode)
 
     strUsage += HelpMessageGroup(_("Masternode options:"));
     strUsage += HelpMessageOpt("-masternode=<n>", strprintf(_("Enable the client to act as a masternode (0-1, default: %u)"), 0));
+    strUsage += HelpMessageOpt("-multimaster=<n>", strprintf(_("Host multiple masternode identities from masternode.conf; requires -disablewallet=1 (0-1, default: %u)"), 0));
     strUsage += HelpMessageOpt("-mnconf=<file>", strprintf(_("Specify masternode configuration file (default: %s)"), "masternode.conf"));
     strUsage += HelpMessageOpt("-mnconflock=<n>", strprintf(_("Lock masternodes from masternode configuration file (default: %u)"), 1));
     strUsage += HelpMessageOpt("-masternodeprivkey=<n>", _("Set the masternode private key"));
@@ -1589,10 +1599,35 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     fMasterNode = GetBoolArg("-masternode", false);
+    fMultiMaster = GetBoolArg("-multimaster", false);
 
-    if ((fMasterNode || masternodeConfig.getCount() > -1) && fTxIndex == false) {
-        return InitError("Enabling Masternode support requires turning on transaction indexing."
+    if (fMasterNode && fMultiMaster) {
+        return InitError("The options -masternode and -multimaster cannot be used together.");
+    }
+
+    if (fMultiMaster && !GetBoolArg("-disablewallet", false)) {
+        return InitError("-multimaster requires -disablewallet=1.");
+    }
+
+    if (fMultiMaster && masternodeConfig.getCount() == 0) {
+        return InitError("-multimaster requires at least one entry in masternode.conf.");
+    }
+
+    if ((fMasterNode || fMultiMaster || masternodeConfig.getCount() > 0) && fTxIndex == false) {
+        return InitError("Enabling Masternode support requires turning on transaction indexing. "
                          "Please add txindex=1 to your configuration and start with -reindex");
+    }
+
+    if (fMultiMaster) {
+        std::string errorMessage;
+
+        if (!hostedMasternodes.LoadFromConfig(errorMessage)) {
+            return InitError("Failed to initialize multi-masternode host: " + errorMessage);
+        }
+
+        LogPrintf(
+            "MULTI-MASTERNODE HOST: loaded %u identities\n",
+            static_cast<unsigned int>(hostedMasternodes.Size()));
     }
 
     if (fMasterNode) {
@@ -1647,8 +1682,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     //lite mode disables all Masternode related functionality
     fLiteMode = GetBoolArg("-litemode", false);
-    if (fMasterNode && fLiteMode) {
-        return InitError("You can not start a masternode in litemode");
+    if ((fMasterNode || fMultiMaster) && fLiteMode) {
+        return InitError("You can not start a masternode or multi-masternode host in litemode");
     }
 
     LogPrintf("fLiteMode %d\n", fLiteMode);

@@ -257,6 +257,7 @@ extern UniValue createmasternodekey(const UniValue& params, bool fHelp);
 extern UniValue getmasternodeoutputs(const UniValue& params, bool fHelp);
 extern UniValue listmasternodeconf(const UniValue& params, bool fHelp);
 extern UniValue getmasternodestatus(const UniValue& params, bool fHelp);
+extern UniValue multimasterstatus(const UniValue& params, bool fHelp);
 extern UniValue getmasternodewinners(const UniValue& params, bool fHelp);
 extern UniValue getmasternodescores(const UniValue& params, bool fHelp);
 

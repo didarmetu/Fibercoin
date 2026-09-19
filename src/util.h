@@ -32,6 +32,7 @@
 //Fibercoin only features
 
 extern bool fMasterNode;
+extern bool fMultiMaster;
 extern bool fLiteMode;
 extern bool fEnableSwiftTX;
 extern int nSwiftTXDepth;

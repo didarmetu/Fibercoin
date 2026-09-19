@@ -108,6 +108,7 @@ using namespace std;
 // Fibercoin only features
 // Masternode
 bool fMasterNode = false;
+bool fMultiMaster = false;
 string strMasterNodePrivKey = "";
 string strMasterNodeAddr = "";
 bool fLiteMode = false;
