@@ -5,11 +5,12 @@
 #include "hostedmasternode.h"
 
 #include "masternode-helpers.h"
-#include "masternodeconfig.h"
+#include "multimasterconfig.h"
 #include "masternodeman.h"
 #include "util.h"
 
 #include <exception>
+#include <set>
 
 CHostedMasternodeManager hostedMasternodes;
 
@@ -18,24 +19,42 @@ CHostedMasternode::CHostedMasternode()
 {
 }
 
+void CHostedMasternode::SetLastError(const std::string& error)
+{
+    LOCK(csState);
+    lastError = error;
+}
+
+void CHostedMasternode::ClearLastError()
+{
+    LOCK(csState);
+    lastError.clear();
+}
+
+void CHostedMasternode::SetLastHostedPing(int64_t sigTime)
+{
+    LOCK(csState);
+    lastHostedPing = sigTime;
+}
+
+void CHostedMasternode::GetRuntimeStatus(
+    std::string& error,
+    int64_t& hostedPing) const
+{
+    LOCK(csState);
+    error = lastError;
+    hostedPing = lastHostedPing;
+}
+
+
 bool CHostedMasternode::Configure(
     const std::string& strAlias,
-    const std::string& strService,
     const std::string& strKey,
     const std::string& strTxHash,
     const std::string& strOutputIndex,
     std::string& errorMessage)
 {
     alias = strAlias;
-    service = CService(strService);
-
-    if (!service.IsValid()) {
-        errorMessage = strprintf(
-            "Invalid service address for hosted masternode %s: %s",
-            alias,
-            strService);
-        return false;
-    }
 
     if (!masternodeSigner.SetKey(
             strKey,
@@ -79,12 +98,11 @@ bool CHostedMasternode::Configure(
 
     vin = CTxIn(txHash, static_cast<uint32_t>(outputIndex));
 
-    lastError.clear();
+    ClearLastError();
 
     LogPrintf(
-        "CHostedMasternode::Configure() - loaded %s, service=%s, vin=%s\n",
+        "CHostedMasternode::Configure() - loaded %s, vin=%s\n",
         alias,
-        service.ToString(),
         vin.ToString());
 
     return true;
@@ -98,13 +116,13 @@ bool CHostedMasternode::SendPing(std::string& errorMessage)
         errorMessage = strprintf(
             "Hosted masternode %s is not present in the masternode list",
             alias);
-        lastError = errorMessage;
+        SetLastError(errorMessage);
         return false;
     }
 
     // The masternode is now known to the network, so clear any
     // earlier "not present" diagnostic.
-    lastError.clear();
+    ClearLastError();
 
     CMasternodePing mnp(vin);
 
@@ -112,7 +130,7 @@ bool CHostedMasternode::SendPing(std::string& errorMessage)
         errorMessage = strprintf(
             "Could not sign masternode ping for hosted masternode %s",
             alias);
-        lastError = errorMessage;
+        SetLastError(errorMessage);
         return false;
     }
 
@@ -134,8 +152,8 @@ bool CHostedMasternode::SendPing(std::string& errorMessage)
 
     mnp.Relay();
 
-    lastHostedPing = mnp.sigTime;
-    lastError.clear();
+    SetLastHostedPing(mnp.sigTime);
+    ClearLastError();
 
     LogPrintf(
         "CHostedMasternode::SendPing() - relayed ping for %s, vin=%s\n",
@@ -147,60 +165,125 @@ bool CHostedMasternode::SendPing(std::string& errorMessage)
 
 bool CHostedMasternodeManager::LoadFromConfig(std::string& errorMessage)
 {
-    LOCK(cs);
+    std::vector<std::shared_ptr<CHostedMasternode> > loadedNodes;
 
-    nodes.clear();
+    std::set<std::string> aliases;
+    std::set<COutPoint> vins;
+    std::set<CPubKey> hotKeys;
 
-    std::vector<CMasternodeConfig::CMasternodeEntry>& entries =
-        masternodeConfig.getEntries();
+    std::vector<CMultiMasternodeConfig::CEntry>& entries =
+        multiMasternodeConfig.getEntries();
 
     BOOST_FOREACH (
-        CMasternodeConfig::CMasternodeEntry& entry,
+        CMultiMasternodeConfig::CEntry& entry,
         entries) {
 
         if (entry.getAlias().empty()) {
             continue;
         }
 
-        CHostedMasternode node;
+        std::shared_ptr<CHostedMasternode> node(
+            new CHostedMasternode());
+
         std::string entryError;
 
-        if (!node.Configure(
+        if (!node->Configure(
                 entry.getAlias(),
-                entry.getIp(),
                 entry.getPrivKey(),
                 entry.getTxHash(),
                 entry.getOutputIndex(),
                 entryError)) {
             errorMessage = entryError;
-            nodes.clear();
             return false;
         }
 
-        nodes.push_back(node);
+        if (!aliases.insert(node->alias).second) {
+            errorMessage = strprintf(
+                "Duplicate hosted masternode alias: %s",
+                node->alias);
+            return false;
+        }
+
+        if (!vins.insert(node->vin.prevout).second) {
+            errorMessage = strprintf(
+                "Duplicate hosted masternode VIN for alias %s: %s",
+                node->alias,
+                node->vin.prevout.ToString());
+            return false;
+        }
+
+        if (!hotKeys.insert(node->pubKeyMasternode).second) {
+            errorMessage = strprintf(
+                "Duplicate hosted masternode hot key for alias %s",
+                node->alias);
+            return false;
+        }
+
+        loadedNodes.push_back(node);
+    }
+
+    {
+        LOCK(cs);
+        nodes.swap(loadedNodes);
     }
 
     LogPrintf(
         "CHostedMasternodeManager::LoadFromConfig() - loaded %u hosted masternodes\n",
-        static_cast<unsigned int>(nodes.size()));
+        static_cast<unsigned int>(Size()));
 
     return true;
 }
 
 void CHostedMasternodeManager::ManageStatus()
 {
-    LOCK(cs);
+    std::vector<std::shared_ptr<CHostedMasternode> > activeNodes;
 
-    BOOST_FOREACH (CHostedMasternode& node, nodes) {
+    {
+        LOCK(cs);
+        activeNodes = nodes;
+    }
+
+    BOOST_FOREACH (
+        const std::shared_ptr<CHostedMasternode>& node,
+        activeNodes) {
+
         std::string errorMessage;
 
-        if (!node.SendPing(errorMessage)) {
+        if (!node->SendPing(errorMessage)) {
             LogPrintf(
                 "CHostedMasternodeManager::ManageStatus() - %s: %s\n",
-                node.alias,
+                node->alias,
                 errorMessage);
         }
     }
+
+    // Compact operational summary after each MultiMaster management cycle.
+    const std::vector<CHostedMasternodeStatus> statuses = GetStatus();
+
+    unsigned int registeredCount = 0;
+    unsigned int hostPingedCount = 0;
+    unsigned int errorCount = 0;
+
+    BOOST_FOREACH (
+        const CHostedMasternodeStatus& status,
+        statuses) {
+
+        if (status.registered)
+            registeredCount++;
+
+        if (status.hostLastPing > 0)
+            hostPingedCount++;
+
+        if (!status.lastError.empty())
+            errorCount++;
+    }
+
+    LogPrintf(
+        "MULTI-MASTERNODE HOST STATUS: loaded=%u registered=%u host_pinged=%u errors=%u\n",
+        static_cast<unsigned int>(statuses.size()),
+        registeredCount,
+        hostPingedCount,
+        errorCount);
 }
 
 size_t CHostedMasternodeManager::Size() const
@@ -209,28 +292,40 @@ size_t CHostedMasternodeManager::Size() const
     return nodes.size();
 }
 
-std::vector<CHostedMasternodeStatus> CHostedMasternodeManager::GetStatus() const
+std::vector<CHostedMasternodeStatus>
+CHostedMasternodeManager::GetStatus() const
 {
-    LOCK(cs);
+    std::vector<std::shared_ptr<CHostedMasternode> > activeNodes;
+
+    {
+        LOCK(cs);
+        activeNodes = nodes;
+    }
 
     std::vector<CHostedMasternodeStatus> result;
-    result.reserve(nodes.size());
+    result.reserve(activeNodes.size());
 
-    BOOST_FOREACH (const CHostedMasternode& node, nodes) {
+    BOOST_FOREACH (
+        const std::shared_ptr<CHostedMasternode>& node,
+        activeNodes) {
+
         CHostedMasternodeStatus status;
 
-        status.alias = node.alias;
-        status.service = node.service.ToString();
-        status.vin = node.vin.ToString();
-        status.lastError = node.lastError;
+        status.alias = node->alias;
+        status.service.clear();
+        status.vin = node->vin.ToString();
         status.registered = false;
         status.networkLastPing = 0;
-        status.hostLastPing = node.lastHostedPing;
 
-        CMasternode* pmn = mnodeman.Find(node.vin);
+        node->GetRuntimeStatus(
+            status.lastError,
+            status.hostLastPing);
+
+        CMasternode* pmn = mnodeman.Find(node->vin);
 
         if (pmn != NULL) {
             status.registered = true;
+            status.service = pmn->addr.ToString();
             status.networkLastPing = pmn->lastPing.sigTime;
         }
 

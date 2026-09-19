@@ -23,6 +23,7 @@
 #include "masternode-budget.h"
 #include "masternode-payments.h"
 #include "masternodeconfig.h"
+#include "multimasterconfig.h"
 #include "masternodeman.h"
 #include "masternode-helpers.h"
 #include "miner.h"
@@ -181,15 +182,14 @@ void PrepareShutdown()
     /// module was initialized.
     RenameThread("fibercoin-shutoff");
 
-    // Release hosted masternode hot keys while the locked-memory
-    // infrastructure is still alive. Waiting for static destruction can
-    // destroy CKey objects too late during process teardown.
+    mempool.AddTransactionsUpdated(1);
+    StopRPCThreads();
+
+    // Worker and RPC threads can no longer access hosted identities.
+    // Release hot keys while the locked-memory infrastructure is still alive.
     if (fMultiMaster) {
         hostedMasternodes.Clear();
     }
-
-    mempool.AddTransactionsUpdated(1);
-    StopRPCThreads();
 #ifdef ENABLE_WALLET
     if (pwalletMain)
         bitdb.Flush(false);
@@ -482,7 +482,8 @@ std::string HelpMessage(HelpMessageMode mode)
 
     strUsage += HelpMessageGroup(_("Masternode options:"));
     strUsage += HelpMessageOpt("-masternode=<n>", strprintf(_("Enable the client to act as a masternode (0-1, default: %u)"), 0));
-    strUsage += HelpMessageOpt("-multimaster=<n>", strprintf(_("Host multiple masternode identities from masternode.conf; requires -disablewallet=1 (0-1, default: %u)"), 0));
+    strUsage += HelpMessageOpt("-multimaster=<n>", strprintf(_("Host multiple masternode identities from multimaster.conf; requires -disablewallet=1 (0-1, default: %u)"), 0));
+    strUsage += HelpMessageOpt("-multimasterconf=<file>", strprintf(_("Specify MultiMaster host configuration file (default: %s)"), "multimaster.conf"));
     strUsage += HelpMessageOpt("-mnconf=<file>", strprintf(_("Specify masternode configuration file (default: %s)"), "masternode.conf"));
     strUsage += HelpMessageOpt("-mnconflock=<n>", strprintf(_("Lock masternodes from masternode configuration file (default: %u)"), 1));
     strUsage += HelpMessageOpt("-masternodeprivkey=<n>", _("Set the masternode private key"));
@@ -1609,8 +1610,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError("-multimaster requires -disablewallet=1.");
     }
 
-    if (fMultiMaster && masternodeConfig.getCount() == 0) {
-        return InitError("-multimaster requires at least one entry in masternode.conf.");
+    if (fMultiMaster && multiMasternodeConfig.getCount() == 0) {
+        return InitError("-multimaster requires at least one entry in multimaster.conf.");
     }
 
     if ((fMasterNode || fMultiMaster || masternodeConfig.getCount() > 0) && fTxIndex == false) {

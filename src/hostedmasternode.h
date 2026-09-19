@@ -11,6 +11,7 @@
 #include "sync.h"
 
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -18,26 +19,33 @@ class CHostedMasternode
 {
 public:
     std::string alias;
-    CService service;
     CTxIn vin;
 
     CKey keyMasternode;
     CPubKey pubKeyMasternode;
 
+private:
+    mutable CCriticalSection csState;
     std::string lastError;
     int64_t lastHostedPing;
 
+    void SetLastError(const std::string& error);
+    void ClearLastError();
+    void SetLastHostedPing(int64_t sigTime);
+
+public:
     CHostedMasternode();
 
     bool Configure(
         const std::string& strAlias,
-        const std::string& strService,
         const std::string& strKey,
         const std::string& strTxHash,
         const std::string& strOutputIndex,
         std::string& errorMessage);
 
     bool SendPing(std::string& errorMessage);
+
+    void GetRuntimeStatus(std::string& error, int64_t& hostedPing) const;
 };
 
 struct CHostedMasternodeStatus
@@ -55,7 +63,7 @@ class CHostedMasternodeManager
 {
 private:
     mutable CCriticalSection cs;
-    std::vector<CHostedMasternode> nodes;
+    std::vector<std::shared_ptr<CHostedMasternode> > nodes;
 
 public:
     bool LoadFromConfig(std::string& errorMessage);

@@ -10,6 +10,7 @@
 #include "init.h"
 #include "main.h"
 #include "masternodeconfig.h"
+#include "multimasterconfig.h"
 #include "noui.h"
 #include "scheduler.h"
 #include "rpcserver.h"
@@ -110,6 +111,17 @@ bool AppInit(int argc, char* argv[])
         if (!masternodeConfig.read(strErr)) {
             fprintf(stderr, "Error reading masternode configuration file: %s\n", strErr.c_str());
             return false;
+        }
+
+        if (GetBoolArg("-multimaster", false)) {
+            std::string multiMasterError;
+
+            if (!multiMasternodeConfig.read(multiMasterError)) {
+                fprintf(stderr,
+                    "Error reading MultiMaster configuration file: %s\n",
+                    multiMasterError.c_str());
+                return false;
+            }
         }
 
         // Command-line RPC

@@ -70,21 +70,36 @@ UniValue multimasterstatus(const UniValue& params, bool fHelp)
             "\nReturns the status of masternode identities hosted by this node.\n"
             "\nResult:\n"
             "{\n"
+            "  \"masternodes\": [ ... ],\n"
             "  \"enabled\": true|false,\n"
             "  \"loaded\": n,\n"
-            "  \"masternodes\": [ ... ]\n"
+            "  \"registered\": n,\n"
+            "  \"host_pinged\": n,\n"
+            "  \"unregistered\": n,\n"
+            "  \"waiting_for_host_ping\": n,\n"
+            "  \"errors\": n\n"
             "}\n");
 
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("enabled", fMultiMaster));
-    result.push_back(Pair("loaded", static_cast<uint64_t>(hostedMasternodes.Size())));
-
     UniValue entries(UniValue::VARR);
 
     std::vector<CHostedMasternodeStatus> statuses =
         hostedMasternodes.GetStatus();
 
+    uint64_t registeredCount = 0;
+    uint64_t hostPingedCount = 0;
+    uint64_t errorCount = 0;
+
     BOOST_FOREACH (const CHostedMasternodeStatus& status, statuses) {
+        if (status.registered)
+            registeredCount++;
+
+        if (status.hostLastPing > 0)
+            hostPingedCount++;
+
+        if (!status.lastError.empty())
+            errorCount++;
+
         UniValue obj(UniValue::VOBJ);
 
         obj.push_back(Pair("alias", status.alias));
@@ -98,7 +113,30 @@ UniValue multimasterstatus(const UniValue& params, bool fHelp)
         entries.push_back(obj);
     }
 
+    const uint64_t loadedCount =
+        static_cast<uint64_t>(statuses.size());
+
+    const uint64_t unregisteredCount =
+        loadedCount >= registeredCount
+            ? loadedCount - registeredCount
+            : 0;
+
+    const uint64_t waitingForHostPingCount =
+        registeredCount >= hostPingedCount
+            ? registeredCount - hostPingedCount
+            : 0;
+
     result.push_back(Pair("masternodes", entries));
+
+    // Keep the summary at the end so large installations can scroll
+    // through individual entries and always finish with overall health.
+    result.push_back(Pair("enabled", fMultiMaster));
+    result.push_back(Pair("loaded", loadedCount));
+    result.push_back(Pair("registered", registeredCount));
+    result.push_back(Pair("host_pinged", hostPingedCount));
+    result.push_back(Pair("unregistered", unregisteredCount));
+    result.push_back(Pair("waiting_for_host_ping", waitingForHostPingCount));
+    result.push_back(Pair("errors", errorCount));
 
     return result;
 }

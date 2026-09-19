@@ -495,6 +495,17 @@ boost::filesystem::path GetMasternodeConfigFile()
     return pathConfigFile;
 }
 
+boost::filesystem::path GetMultiMasternodeConfigFile()
+{
+    boost::filesystem::path pathConfigFile(
+        GetArg("-multimasterconf", "multimaster.conf"));
+
+    if (!pathConfigFile.is_absolute())
+        pathConfigFile = GetDataDir() / pathConfigFile;
+
+    return pathConfigFile;
+}
+
 static const char* DEFAULT_CONFIG =
 R"(# ============================================================
 # Fibercoin Normal Desktop / Laptop Wallet
