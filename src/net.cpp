@@ -1543,6 +1543,10 @@ void static ThreadStakeMinter()
     boost::this_thread::interruption_point();
     LogPrintf("ThreadStakeMinter started\n");
     CWallet* pwallet = pwalletMain;
+    if (!pwallet) {
+        LogPrintf("ThreadStakeMinter: wallet is disabled; exiting\n");
+        return;
+    }
     try {
         BitcoinMiner(pwallet, true);
         boost::this_thread::interruption_point();
@@ -1749,7 +1753,7 @@ void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler)
     scheduler.scheduleEvery(&DumpData, DUMP_ADDRESSES_INTERVAL);
 
     // ppcoin:mint proof-of-stake blocks in the background
-    if (GetBoolArg("-staking", true))
+    if (GetBoolArg("-staking", true) && pwalletMain)
         threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "stakemint", &ThreadStakeMinter));
 }
 

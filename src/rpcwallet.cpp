@@ -40,6 +40,9 @@ std::string HelpRequiringPassphrase()
 
 void EnsureWalletIsUnlocked()
 {
+    if (!pwalletMain)
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (wallet disabled)");
+
     if (pwalletMain->IsLocked())
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
 }

@@ -176,6 +176,9 @@ UniValue preparebudget(const UniValue& params, bool fHelp)
             HelpExampleCli("preparebudget", "\"test-proposal\" \"https://savebitcoin.io/t/test-proposal\" 2 820800 \"D9oc6C3dttUbv8zd7zGNq1qKBGf4ZQ1XEE\" 500") +
             HelpExampleRpc("preparebudget", "\"test-proposal\" \"https://savebitcoin.io/t/test-proposal\" 2 820800 \"D9oc6C3dttUbv8zd7zGNq1qKBGf4ZQ1XEE\" 500"));
 
+    if (!pwalletMain)
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (wallet disabled)");
+
     if (pwalletMain->IsLocked())
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
 

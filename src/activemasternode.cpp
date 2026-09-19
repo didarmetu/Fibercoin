@@ -45,6 +45,17 @@ void CActiveMasternode::ManageStatus()
         }
     }
 
+    // A walletless hot masternode can only be activated by the controller
+    // broadcast. Keep the initial state so subsequent ManageStatus() calls
+    // continue checking mnodeman, and never enter local collateral selection.
+    // A matching broadcast also calls EnableHotColdMasterNode() directly.
+    if (status != ACTIVE_MASTERNODE_STARTED && !pwalletMain) {
+        status = ACTIVE_MASTERNODE_INITIAL;
+        notCapableReason = "Hot node, waiting for remote activation.";
+        LogPrintf("CActiveMasternode::ManageStatus() - %s\n", notCapableReason);
+        return;
+    }
+
     if (status != ACTIVE_MASTERNODE_STARTED) {
         // Set defaults
         status = ACTIVE_MASTERNODE_NOT_CAPABLE;
@@ -300,6 +311,11 @@ bool CActiveMasternode::GetMasterNodeVin(CTxIn& vin, CPubKey& pubkey, CKey& secr
 
 bool CActiveMasternode::GetMasterNodeVin(CTxIn& vin, CPubKey& pubkey, CKey& secretKey, std::string strTxHash, std::string strOutputIndex)
 {
+    if (!pwalletMain) {
+        LogPrintf("CActiveMasternode::GetMasterNodeVin - Wallet is disabled\n");
+        return false;
+    }
+
     // Find possible candidates
     TRY_LOCK(pwalletMain->cs_wallet, fWallet);
     if (!fWallet) return false;
@@ -349,6 +365,11 @@ bool CActiveMasternode::GetMasterNodeVin(CTxIn& vin, CPubKey& pubkey, CKey& secr
 // Extract Masternode vin information from output
 bool CActiveMasternode::GetVinFromOutput(COutput out, CTxIn& vin, CPubKey& pubkey, CKey& secretKey)
 {
+    if (!pwalletMain) {
+        LogPrintf("CActiveMasternode::GetVinFromOutput - Wallet is disabled\n");
+        return false;
+    }
+
     CScript pubScript;
 
     vin = CTxIn(out.tx->GetHash(), out.i);
@@ -379,6 +400,11 @@ vector<COutput> CActiveMasternode::SelectCoinsMasternode()
     vector<COutput> vCoins;
     vector<COutput> filteredCoins;
     vector<COutPoint> confLockedCoins;
+
+    if (!pwalletMain) {
+        LogPrintf("CActiveMasternode::SelectCoinsMasternode - Wallet is disabled\n");
+        return filteredCoins;
+    }
 
     // Temporary unlock MN coins from masternode.conf
     if (GetBoolArg("-mnconflock", true)) {

@@ -235,7 +235,8 @@ void OptionsDialog::on_resetButton_clicked()
 void OptionsDialog::on_okButton_clicked()
 {
     mapper->submit();
-    pwalletMain->MarkDirty();
+    if (pwalletMain)
+        pwalletMain->MarkDirty();
     accept();
 }
 

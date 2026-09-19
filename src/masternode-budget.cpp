@@ -183,6 +183,13 @@ void CBudgetManager::SubmitFinalBudget()
     uint256 txidCollateral;
 
     if (!mapCollateralTxids.count(tempBudget.GetHash())) {
+        if (!pwalletMain) {
+            LogPrint("masternode",
+                     "CBudgetManager::SubmitFinalBudget - Wallet is disabled; "
+                     "cannot create collateral transaction\n");
+            return;
+        }
+
         CWalletTx wtx;
         if (!pwalletMain->GetBudgetSystemCollateralTX(wtx, tempBudget.GetHash(), false)) {
             LogPrint("masternode","CBudgetManager::SubmitFinalBudget - Can't make collateral transaction\n");

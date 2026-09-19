@@ -20,8 +20,17 @@
 #include <fstream>
 
 
+static void EnsureMasternodeWalletAvailable()
+{
+    if (!pwalletMain)
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Method not found (wallet disabled)");
+}
+
+
 void SendMoney(const CTxDestination& address, CAmount nValue, CWalletTx& wtxNew, AvailableCoinsType coin_type = ALL_COINS)
 {
+    EnsureMasternodeWalletAvailable();
+
     // Check amount
     if (nValue <= 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid amount");
@@ -391,6 +400,11 @@ UniValue masternodedebug (const UniValue& params, bool fHelp)
             "\nExamples:\n" +
             HelpExampleCli("masternodedebug", "") + HelpExampleRpc("masternodedebug", ""));
 
+    // A walletless hot masternode has no local collateral input to inspect.
+    // Its status is driven by remote activation from the controller wallet.
+    if (!pwalletMain)
+        return activeMasternode.GetStatus();
+
     if (activeMasternode.status != ACTIVE_MASTERNODE_INITIAL || !masternodeSync.IsSynced())
         return activeMasternode.GetStatus();
 
@@ -447,6 +461,8 @@ UniValue startmasternode (const UniValue& params, bool fHelp)
             "}\n"
             "\nExamples:\n" +
             HelpExampleCli("startmasternode", "\"alias\" \"0\" \"my_mn\"") + HelpExampleRpc("startmasternode", "\"alias\" \"0\" \"my_mn\""));
+
+    EnsureMasternodeWalletAvailable();
 
     bool fLock = (params[1].get_str() == "true" ? true : false);
 
