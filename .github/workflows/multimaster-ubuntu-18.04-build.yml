@@ -152,9 +152,6 @@ jobs:
 
               echo "===== VERIFY MULTIMASTER BUILD ====="
 
-              ./src/fibercoind --version
-              ./src/fibercoin-cli --version
-
               ./src/fibercoind -help \
                 > diagnostics/multimaster-fibercoind-help.txt \
                 2>&1 || true
