@@ -5,9 +5,6 @@ on:
     branches:
       - feature/multi-masternode-host
   workflow_dispatch:
-  push:
-    branches:
-      - feature/multi-masternode-host
 
 jobs:
   build:
