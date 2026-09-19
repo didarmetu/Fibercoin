@@ -49,22 +49,61 @@ Example:
 
 Replace the example IP addresses, private keys, transaction IDs, and output indexes with your actual masternode information.
 
-## 5. Configure the remote masternodes
+## 5. Choose the masternode hosting model
 
-Each remote masternode requires its own Fibercoin configuration.
+After preparing the controller configuration, masternodes can be hosted
+using either legacy single-masternode daemons or a MultiMaster host.
 
-The remote configuration should contain the corresponding masternode private key:
+### Option A: Legacy single-masternode host
+
+Each masternode runs its own Fibercoin daemon.
+
+The remote configuration contains the corresponding masternode private key:
 
     masternode=1
     masternodeprivkey=MASTERNODE_PRIVATE_KEY
 
 Start or restart the Fibercoin daemon after updating the configuration.
 
-Check the remote node:
+Check the node with:
 
     fibercoin-cli getinfo
 
-Confirm that the node is synchronized with the Fibercoin network.
+and:
+
+    fibercoin-cli getmasternodestatus
+
+### Option B: MultiMaster host
+
+Multiple masternode identities can be maintained by one shared
+`fibercoind` process.
+
+Configure the host with:
+
+    disablewallet=1
+    multimaster=1
+    txindex=1
+
+Create `multimaster.conf` in the host data directory.
+
+Each line uses:
+
+    alias masternodeprivkey collateral_output_txid collateral_output_index
+
+Example:
+
+    mn01 MASTERNODE_PRIVATE_KEY TXID 0
+    mn02 MASTERNODE_PRIVATE_KEY TXID 1
+
+The `IP:port` does not need to be duplicated in this file. It is learned
+from the masternode registration already broadcast by the controller.
+
+The aliases, masternode private keys, transaction IDs, and output indexes
+must correspond to the entries in the controller wallet's `masternode.conf`.
+
+Check the host with:
+
+    fibercoin-cli multimasterstatus
 
 ## 6. Verify the controller configuration
 
@@ -89,6 +128,19 @@ Additional supported start modes include:
     masternode start-all
     masternode start-missing
     masternode start-disabled
+
+## MultiMaster startup behavior
+
+The controller wallet still performs the initial masternode registration
+using the collateral wallet.
+
+After a masternode is registered, the MultiMaster host recognizes the
+collateral VIN and maintains future masternode pings using the associated
+masternode private key.
+
+Restarting the MultiMaster host does not require restarting already
+registered masternodes from the controller. Once synchronized, the host
+resumes maintaining their pings automatically.
 
 ## Security
 

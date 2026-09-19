@@ -124,7 +124,7 @@ For complete RPC usage:
 
 ## Remote masternode configuration
 
-Each remote masternode should use the masternode private key corresponding to its entry in `masternode.conf`.
+For legacy single-masternode deployments, each remote masternode runs its own daemon and uses the masternode private key corresponding to its entry in `masternode.conf`.
 
 Typical remote settings include:
 
@@ -146,6 +146,101 @@ From a controller wallet, you can inspect configured nodes with:
 and the network masternode list with:
 
     listmasternodes
+
+## MultiMaster host mode
+
+Fibercoin can also host multiple masternode identities from a single
+`fibercoind` process.
+
+This mode is intended for operators running many masternodes who want to
+share the blockchain, network connections, transaction index, and other
+full-node resources instead of running one full daemon for every masternode.
+
+A MultiMaster host is configured with:
+
+    disablewallet=1
+    multimaster=1
+    txindex=1
+
+The hosted masternode identities are stored separately from the controller
+configuration in:
+
+    multimaster.conf
+
+By default, `multimaster.conf` is stored in the Fibercoin data directory.
+
+A different file can be selected with:
+
+    -multimasterconf=<file>
+
+Each non-comment line contains four space-separated fields:
+
+    alias masternodeprivkey collateral_output_txid collateral_output_index
+
+Example:
+
+    mn01 MASTERNODE_PRIVATE_KEY TXID 0
+    mn02 MASTERNODE_PRIVATE_KEY TXID 1
+
+The public `IP:port` is intentionally not stored in `multimaster.conf`.
+
+The controller wallet supplies the service address when it creates the
+masternode broadcast. After the masternode is registered, the MultiMaster
+host obtains the service address from the network masternode list.
+
+The controller wallet still uses the normal five-field `masternode.conf`
+entry and performs the initial masternode start or broadcast.
+
+After registration, the MultiMaster host maintains masternode pings using
+the corresponding masternode private keys.
+
+### MultiMaster status
+
+Check all identities hosted by the current daemon with:
+
+    fibercoin-cli multimasterstatus
+
+The summary includes:
+
+    enabled
+    loaded
+    registered
+    host_pinged
+    unregistered
+    waiting_for_host_ping
+    errors
+
+`getmasternodestatus` and `masternodedebug` are legacy single-masternode
+commands and should not be used to determine MultiMaster host status.
+
+Network-wide masternode information remains available through:
+
+    getmasternodecount
+    listmasternodes
+    mnsync status
+
+### MultiMaster configuration validation
+
+The MultiMaster host rejects duplicate:
+
+- aliases
+- collateral transaction outputs (VINs)
+- masternode private keys
+
+Multiple masternodes may use the same service address or `IP:port`.
+
+### MultiMaster security
+
+`multimaster.conf` contains masternode hot private keys.
+
+It does not contain the wallet private keys controlling the collateral,
+and collateral wallet private keys should never be copied to the
+MultiMaster host.
+
+Restrict access to the configuration file appropriately. On Unix-like
+systems, for example:
+
+    chmod 600 multimaster.conf
 
 ## Security
 
