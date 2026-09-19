@@ -1101,7 +1101,7 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
                     }
                     while (true) {
                         TRY_LOCK(pwalletMain->cs_wallet, lockWallet);
-                        if (!lockMain) {
+                        if (!lockWallet) {
                             MilliSleep(50);
                             continue;
                         }
