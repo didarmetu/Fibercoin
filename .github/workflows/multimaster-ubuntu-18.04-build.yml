@@ -193,67 +193,67 @@ jobs:
                 "$PACKAGE/doc/"
 
               cat > "$PACKAGE/multimaster.conf.example" <<CONFIG
-# Fibercoin MultiMaster host configuration
-#
-# Format:
-# alias masternodeprivkey collateral_output_txid collateral_output_index
-#
-# Example:
-# mn01 MASTERNODE_PRIVATE_KEY TXID 0
-# mn02 MASTERNODE_PRIVATE_KEY TXID 1
-CONFIG
+              # Fibercoin MultiMaster host configuration
+              #
+              # Format:
+              # alias masternodeprivkey collateral_output_txid collateral_output_index
+              #
+              # Example:
+              # mn01 MASTERNODE_PRIVATE_KEY TXID 0
+              # mn02 MASTERNODE_PRIVATE_KEY TXID 1
+              CONFIG
 
               cat > "$PACKAGE/fibercoin.conf.example" <<CONFIG
-# Fibercoin MultiMaster host
-server=1
-daemon=1
-
-# MultiMaster runtime mode
-disablewallet=1
-multimaster=1
-
-# Required for masternode operation
-txindex=1
-
-# Optional custom MultiMaster config path:
-# multimasterconf=multimaster.conf
-CONFIG
+              # Fibercoin MultiMaster host
+              server=1
+              daemon=1
+              
+              # MultiMaster runtime mode
+              disablewallet=1
+              multimaster=1
+              
+              # Required for masternode operation
+              txindex=1
+              
+              # Optional custom MultiMaster config path:
+              # multimasterconf=multimaster.conf
+              CONFIG
 
               cat > "$PACKAGE/README-MULTIMASTER.txt" <<README
-Fibercoin MultiMaster Ubuntu 18.04 x86_64
-
-This package contains:
-  bin/fibercoind
-  bin/fibercoin-cli
-  multimaster.conf.example
-  fibercoin.conf.example
-  doc/masternode_conf.md
-  doc/masternode-start-many.md
-
-MultiMaster host runtime configuration:
-
-  disablewallet=1
-  multimaster=1
-  txindex=1
-
-multimaster.conf format:
-
-  alias masternodeprivkey collateral_output_txid collateral_output_index
-
-Status:
-
-  fibercoin-cli multimasterstatus
-
-Network-wide masternode commands:
-
-  fibercoin-cli getmasternodecount
-  fibercoin-cli listmasternodes
-  fibercoin-cli mnsync status
-
-The controller wallet still performs the initial masternode
-registration/broadcast. The MultiMaster host maintains subsequent
-masternode pings.
-README
+              Fibercoin MultiMaster Ubuntu 18.04 x86_64
+              
+              This package contains:
+              bin/fibercoind
+              bin/fibercoin-cli
+              multimaster.conf.example
+              fibercoin.conf.example
+              doc/masternode_conf.md
+              doc/masternode-start-many.md
+              
+              MultiMaster host runtime configuration:
+              
+              disablewallet=1
+              multimaster=1
+              txindex=1
+              
+              multimaster.conf format:
+              
+              alias masternodeprivkey collateral_output_txid collateral_output_index
+              
+              Status:
+              
+              fibercoin-cli multimasterstatus
+              
+              Network-wide masternode commands:
+              
+              fibercoin-cli getmasternodecount
+              fibercoin-cli listmasternodes
+              fibercoin-cli mnsync status
+              
+              The controller wallet still performs the initial masternode
+              registration/broadcast. The MultiMaster host maintains subsequent
+              masternode pings.
+              README
 
               chmod +x \
                 "$PACKAGE/bin/fibercoind" \
