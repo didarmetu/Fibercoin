@@ -1,6 +1,9 @@
 name: MultiMaster Ubuntu 18.04 x86-64 Build
 
 on:
+  push:
+    branches:
+      - feature/multi-masternode-host
   workflow_dispatch:
   push:
     branches:
